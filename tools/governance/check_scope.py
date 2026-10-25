@@ -146,7 +146,14 @@ def check(task: dict | None, base: str | None, staged: bool) -> list[dict]:
                                   "detail": f"{name} changed; the task "
                                             f"does not allow editing "
                                             f"existing tests"})
-        if path.endswith(".py") and status in {"A", "M"}:
+        # The weakening scan guards product code against workers. The
+        # governance tooling itself is protected from workers and changed
+        # only under CODEOWNERS review, and it legitimately contains
+        # `# noqa: E402` (sys.path setup) and docstrings that *name* the
+        # patterns it hunts for. Scanning it would make the kit fail its
+        # own adoption PR.
+        if path.endswith(".py") and status in {"A", "M"} and \
+                not matches(path, boundaries()["protected"]["always"]):
             v += _scan_diff(path, diff_text(path, base, staged))
 
     if task is not None:
