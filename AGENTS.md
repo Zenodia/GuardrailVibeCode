@@ -30,8 +30,8 @@ correctness and reproducibility outrank speed.
 
 ## If you are an ARCHITECT or REVIEWER
 
-Read `governance/ROLES.md`. Specs change only through
-`governance/CHANGE_CONTROL.md`.
+Start with `$architect`, or read `governance/ROLES.md`. Specs change
+only through `governance/CHANGE_CONTROL.md`.
 
 ## Always
 

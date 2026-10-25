@@ -1,0 +1,9 @@
+# Explicit invocation only ($architect). A worker must never adopt the
+# ARCHITECT role on its own: that is how a worker ends up rewriting the
+# contract it is supposed to obey.
+interface:
+  display_name: "Architect session"
+  short_description: "Spec -> feature -> tasks, one feature at a time"
+  default_prompt: "Start an architect session for: "
+policy:
+  allow_implicit_invocation: false

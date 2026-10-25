@@ -12,6 +12,10 @@ Hundreds of thousands of agent-written lines stay debuggable, because
 every change traces to a task, its requirement IDs, its packet and its
 gate evidence.
 
+**To get started with Codex CLI, read
+[governance/README.md](governance/README.md).** It covers setup,
+starting a session (`$architect`), and running tasks.
+
 ## The five layers in this repo
 
 | Layer (your diagram) | Here | Enforced by |
