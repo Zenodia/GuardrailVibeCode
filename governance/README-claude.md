@@ -180,6 +180,18 @@ git branch -D task/TASK-NNNN
 
 **E. Feature delivered.** Start the next feature at A.
 
+## Walkthrough: your first feature
+
+`README.md` has a step-by-step first feature ("Walkthrough: your first
+feature"), from the first prompt to the final merge. Follow it with
+three substitutions:
+- `claude --model <strong-model>` instead of `codex --profile architect`;
+- `/architect` instead of `$architect`;
+- `--backend claude` added to every `run_worker.py` command.
+
+Everything else (branches, lint, pinning, PRs, BLOCKED handling) is
+identical.
+
 ## Reviewing
 
 ```bash

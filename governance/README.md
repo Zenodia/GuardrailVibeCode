@@ -269,6 +269,122 @@ git branch -D task/TASK-NNNN
 
 Once all of its tasks are merged, start the next feature at A.
 
+## Walkthrough: your first feature
+
+The loop above, run once end to end with a made-up example: *"add a
+`--dry-run` flag to the export command that prints what it would write
+without writing files."* It assumes the kit is adopted and bootstrapped.
+
+### 1. Write the feature (architect session)
+
+The architect edits files in your working tree, so start on a branch:
+```bash
+git switch main && git pull && git switch -c feat/export-dry-run
+```
+```bash
+codex --profile architect
+```
+> $architect FEAT for: add a --dry-run flag to the export command that
+> prints what it would write without writing any files
+
+The session reads only the docs and requirements this touches, then
+**asks you clarifying questions**: which commands, the output format,
+whether `--dry-run` is allowed together with `--force`, and so on.
+Answer them. This is where you steer the design; everything after this
+is execution.
+
+It then writes:
+- `specs/features/FEAT-0007-export-dry-run.md`: the intent, what's out
+  of scope, and Gherkin scenarios such as:
+  ```gherkin
+  @REQ-CLI-004
+  Scenario: dry run writes nothing
+    Given an export config targeting out/
+    When "export --dry-run" runs
+    Then exit code is 0, stdout lists out/a.json and out/b.json
+    And out/ contains no files
+  ```
+- any new requirement as a **draft**, for example `REQ-CLI-004` in
+  `specs/requirements/cli.toml`.
+
+Before moving on, check that every scenario uses concrete values and is
+tagged with a REQ, that "out of scope" is right, and that no code was
+written. If the session starts writing code, stop it. Then:
+```bash
+python tools/governance/lint_contracts.py
+```
+
+### 2. Get the feature approved
+
+```bash
+git add specs && git commit -m "FEAT-0007: export --dry-run (spec)"
+```
+```bash
+gh pr create --fill
+```
+The **owner** reviews it, changes the new requirements from `draft` to
+`approved` and the FEAT `status` to `approved` (in the same PR), and
+merges. Until then, no tasks can cite those requirements.
+
+### 3. Turn the feature into tasks (architect session)
+
+```bash
+git switch main && git pull && git switch -c tasks/FEAT-0007
+```
+> $architect tasks for FEAT-0007
+
+It writes, for example:
+- `TASK-0031`: parse the flag and thread it through (CLI package);
+- `TASK-0032`: make the writer skip disk writes in dry-run mode, with
+  `depends_on = ["TASK-0031"]` if they touch the same files.
+
+Each task names its acceptance test up front. Then, for each task:
+```bash
+python tools/governance/lint_contracts.py --pin TASK-0031
+```
+```bash
+python tools/governance/compile_packet.py TASK-0031
+```
+If the compiler says `SPLIT_REQUIRED`, ask the session to split that
+task. When both commands pass, set `status = "ready"`, commit, open a
+PR, and a reviewer merges it.
+
+### 4. Implement, one task at a time (plain shell)
+
+```bash
+git switch main && git pull
+```
+```bash
+python tools/governance/run_worker.py TASK-0031 --dry-run
+```
+Read the packet it prints: this is everything the small model will see.
+Then run it:
+```bash
+python tools/governance/run_worker.py TASK-0031 --commit
+```
+- **DONE:** run `gh pr create --fill`; a human reviews and merges it;
+  then run `TASK-0032` the same way.
+- **BLOCKED:** paste the report into an architect session
+  (`$architect BLOCKED report for TASK-0031: <paste>`), apply its
+  ruling, release the branch (`git push origin --delete task/TASK-0031`),
+  and re-run.
+
+### 5. Close the feature
+
+When all its tasks are merged, set the FEAT's `status = "delivered"` in
+a small PR. Then start the next feature at step 1.
+
+### Habits that help
+
+- **One feature per architect session.** Start fresh for the next
+  feature, so the old one's context doesn't leak into the new one.
+- **Spend your effort in step 1.** A vague FEAT turns into vague tasks,
+  and those come back BLOCKED. A precise FEAT turns into tasks the small
+  model can finish.
+- **Read the `--dry-run` packet the first few times.** If you couldn't do
+  the task from that packet alone, the worker can't either. Tighten the
+  task rather than hoping.
+
 ## Humans implementing a task
 
 A human developer claims a task the same way, without an agent:
