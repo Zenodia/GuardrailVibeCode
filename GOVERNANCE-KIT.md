@@ -1,29 +1,36 @@
-# Governance kit: binding contract for Codex workers
+# Governance kit: a binding contract for coding agents
 
-This is the guide to this kit. It is not copied into the repository. Everything
-else in this directory mirrors the repository root and can be copied in as
-is.
+This is the guide to the kit. It is not copied into a repository.
+Everything else in this directory mirrors a repository root and is
+copied in at adoption.
 
-**Goal.** A frontier model (the ARCHITECT, for example GPT-6.x) writes
-binding, versioned specifications. Small Codex models (WORKERS) implement
-one task at a time from a compiled packet, inside hard scope, retry and
-token budgets. Deterministic scripts verify everything the model claims.
-Hundreds of thousands of agent-written lines stay debuggable, because
-every change traces to a task, its requirement IDs, its packet and its
-gate evidence.
+**Goal.** A strong model (the ARCHITECT) writes binding, versioned
+specifications with a human approving them. Small coding models
+(WORKERS) implement one task at a time from a compiled packet, inside
+hard scope, retry and budget limits. Deterministic scripts verify
+everything the model claims. Large amounts of agent-written code stay
+debuggable, because every change traces to a task, its requirement IDs,
+its packet and its gate evidence.
 
-**To get started with Codex CLI, read
-[governance/README.md](governance/README.md).** It covers setup,
-starting a session (`$architect`), and running tasks.
+The kit is generic. The repo-specific layer (purpose, package rules,
+boundaries, interfaces, domain requirements, readiness tasks) is
+generated at adoption by the `bootstrap` skill and approved by a human
+owner.
 
-## The five layers in this repo
+**Get started:**
+- Codex CLI: [governance/README.md](governance/README.md)
+- Claude Code CLI: [governance/README-claude.md](governance/README-claude.md)
 
-| Layer (your diagram) | Here | Enforced by |
+Both tools can share one repository.
+
+## The five layers
+
+| Layer | Here | Enforced by |
 | --- | --- | --- |
-| **Guardrail** | `ci/governance.yml`, `.githooks/pre-commit`, `ci/CODEOWNERS`, `tools/governance/check_*.py`, gitleaks/bandit/pip-audit | CI + hooks; model-independent |
-| **Spec** | `governance/CONSTITUTION.md` (CON-01..10), `specs/requirements/*.toml` (34 REQs), `specs/features/` (BDD), `specs/boundaries.toml`, `specs/interfaces.toml`, `specs/decisions/` (ADRs) | `lint_contracts.py`, hashes, CODEOWNERS |
-| **TDD** | Acceptance test first, `@pytest.mark.req`, gates BASELINE -> RED -> GREEN -> GUARD -> REPORT | `run_worker.py` (RED is checked on a worktree of the pre-change code) |
-| **Agentic harness (Codex)** | `AGENTS.md` chain, `.agents/skills/`, `codex exec` with `--output-schema`, `--ignore-user-config`, budgets | `run_worker.py`, `compile_packet.py`, `governance/budgets.toml` |
+| **Guardrail** | `ci/governance.yml`, `.githooks/pre-commit`, `ci/CODEOWNERS`, `tools/governance/check_*.py`, `.claude/settings.json` edit hook, gitleaks/bandit/pip-audit | CI + hooks; model-independent |
+| **Spec** | `governance/CONSTITUTION.md` (CON-01..10), `specs/requirements/` (20-item generic baseline + domain drafts from bootstrap), `specs/features/` (BDD), `specs/boundaries.toml`, `specs/interfaces.toml`, `specs/decisions/` (ADRs) | `lint_contracts.py`, hashes, CODEOWNERS |
+| **TDD** | Acceptance test first, requirement-traced tests, gates BASELINE -> RED -> GREEN -> GUARD -> REPORT | `run_worker.py` (RED is checked on a worktree of the pre-change code) |
+| **Agentic harness** | `AGENTS.md` (+ `CLAUDE.md` importing it), skills in `.agents/skills/` and `.claude/skills/`, `run_worker.py --backend codex|claude`, budgets | `run_worker.py`, `compile_packet.py`, `governance/budgets.toml` |
 | **Vibe coding** | `explore/` | `check_boundaries.py` (nothing imports `explore`), promotion only via a task |
 
 Details: `governance/LAYERS.md`.
@@ -31,40 +38,23 @@ Details: `governance/LAYERS.md`.
 ## How a task flows
 
 ```
-FEAT (BDD, human-approved) --ARCHITECT--> TASK-*.toml --lint --pin-->
+FEAT (BDD, owner-approved) --ARCHITECT--> TASK-*.toml --lint --pin--> main
 compile_packet (core + package rules + verbatim REQs + excerpts; budget-checked)
-  --> run_worker: CLAIM branch task/<ID> @ main, BASELINE, codex exec (fresh)
-  --> harness gates: GREEN, RED (on base worktree), GUARD scope/boundaries/
+  --> run_worker: CLAIM branch task/<ID> @ main, BASELINE, agent run (fresh)
+  --> harness gates: GREEN, RED (pre-change worktree), GUARD scope/boundaries/
       interfaces, REPORT (claims vs harness) --> ledger record
   --> DONE: commit with Task/Task-Hash/Reqs trailers -> PR -> CI -> REVIEWER
   --> BLOCKED: evidence -> ARCHITECT ruling -> release claim & re-run, or retire
 ```
 
-## Context budget (default profile `worker-32k`)
-
-The figures below are a pessimistic estimate (characters / 3.2). The
-linter uses tiktoken when it is installed.
-
-| Layer | Size | Loaded |
-| --- | --- | --- |
-| Root `AGENTS.md` | ~610 tok (cap 650) | every Codex session |
-| Package `AGENTS.md` | 150-290 tok (cap 300) | embedded in the packet |
-| Constitution core | ~550 tok (cap 800) | every packet |
-| Task + REQs + excerpts | <= 1,500 each | this task only |
-| **Packet cap** | 20% x (32,000 - 4,000) = **5,600 tok** | `SPLIT_REQUIRED` above |
-| Old `AGENTS.md` (for comparison) | ~2,600 tok | was always-on |
-
-Profiles for 16K and 128K windows are in `governance/budgets.toml`. Set
-the real model names there (`CHANGE-ME`).
-
 ## Many people, many workers: three rules
 
-Full detail is in `governance/CHANGE_CONTROL.md`. These apply at every level,
-from task to constitution, and to humans and Codex alike.
+Full detail is in `governance/CHANGE_CONTROL.md`. These apply at every
+level, from task to constitution, and to humans and agents alike.
 
 1. **One owner per item.** A task is claimed by creating the branch
-   `task/<ID>` (atomic on origin, so a second claim fails). A FEAT has one
-   `owner`. Specs and the constitution are owned through CODEOWNERS.
+   `task/<ID>` (atomic on origin, so a second claim fails). A FEAT has
+   one `owner`. Specs and the constitution are owned through CODEOWNERS.
 2. **Disjoint or ordered.** Lint rejects two open tasks that overlap in
    scope unless `depends_on` orders them.
 3. **Pin, don't trust.** Tasks pin requirement and feature hashes. A
@@ -75,96 +65,68 @@ from task to constitution, and to humans and Codex alike.
 Resolution: **first merge wins, and the second re-validates** (release
 the claim and re-run). Nobody hand-merges two intents. Task status in
 the file is only `draft | ready | retired`; "in flight" and "delivered"
-are read from git, so they cannot drift.
+are read from git, so they cannot drift. This requires `main` to demand
+up-to-date branches (or a merge queue).
 
-Other things that keep the kit from rotting:
+## Two tools, one contract
 
-- **Per-run ledger files** (`status/ledger/`). Many branches can record
-  runs without merge conflicts.
-- **Commit trailers.** `git log --grep "Reqs:.*REQ-DATA-003"` finds every
-  change made under a requirement, by humans and agents alike.
-- **Interface and boundary freezes.** Drift fails CI unless an approved
-  task allowed exactly that symbol or edge.
+| | Codex | Claude Code |
+| --- | --- | --- |
+| Always-on rules | `AGENTS.md` | `CLAUDE.md`, which only imports `AGENTS.md` (lint-enforced) |
+| Skills | `.agents/skills/` (`$name`) | `.claude/skills/` (`/name`), lint-checked identical |
+| Worker | `run_worker.py --backend codex` | `run_worker.py --backend claude` |
+| Protected edits | caught after the run | also blocked at edit time (hook) |
 
-## Adoption steps
+The packet, claim, gates, report schema, ledger and CI are shared, so
+the guarantees do not depend on which agent ran.
 
-1. Copy everything except this file into the repository root. Move
-   `ci/governance.yml` to `.github/workflows/` and `ci/CODEOWNERS` to
-   `.github/`. Fill in every `CHANGE-ME`. Protect `main`: require the
-   governance checks, require CODEOWNER review, and **require branches
-   to be up to date before merging** (or use a merge queue). Without
-   that last setting, two PRs can each pass CI against an old `main` and
-   both merge, which breaks "first merge wins, second re-validates".
-2. Add the following to the root `pyproject.toml`:
-   ```toml
-   [tool.pytest.ini_options]
-   markers = [
-     "req(id): test proves the given requirement ID",
-     "solver: needs the Elmer/Gmsh Docker image",
-   ]
-   ```
-3. Add `status/runs/` to `.gitignore`. Keep `status/ledger/` tracked.
-4. Run `git config core.hooksPath .githooks`.
-5. Have a human owner review `specs/requirements/`. `approved` entries
-   restate the old `AGENTS.md` (each `source` says where). Five `draft`
-   entries come from the architecture findings or were forward-looking
-   in the old file, and need a decision.
-6. Run `python tools/governance/check_boundaries.py --report`, compare
-   the observed graph with `specs/boundaries.toml`, and fix whichever
-   side is wrong. The `third_party` lists for `ebe` and `lorentzforge`
-   are INFERRED.
-7. Run `python tools/governance/check_interfaces.py --record`, review the
-   result, and commit.
-8. Run `python tools/governance/lint_contracts.py --trace` to see which
-   MUST requirements lack a traced test. That list is your test backlog.
-   Turn on `--strict-trace` in CI when it is empty.
-9. Run the Worker Readiness Test (`governance/READINESS.md`) before
-   giving the small model real work.
+## Context budget (default profile `worker-32k`)
 
-## Where the old AGENTS.md went
+The estimates below use characters / 3.2, a pessimistic ratio. The
+linter uses tiktoken when it is installed.
 
-| Old section | Now |
-| --- | --- |
-| Purpose | One line in root `AGENTS.md`; `docs/architecture/` keeps the detail; REQ-ARCH-007/008 (draft) keep the forward-looking scope |
-| Architecture | REQ-ARCH-001..008, `specs/boundaries.toml`, CON-06 |
-| Canonical Configuration | REQ-CFG-001..005, CON-03 |
-| Scientific Data and Results | REQ-DATA-001..006, REQ-PROV-001..004, CON-05 |
-| Separation of Concerns | REQ-ARCH-004, CON-03..05 |
-| Development | Root `AGENTS.md` "Always", REQ-DEV-001..004 |
-| Agent Working Rules | Root `AGENTS.md` worker section, `governance/ROLES.md` (architectural changes go through the ARCHITECT with human approval) |
-| Safety and Validation | CON-02, CON-10, REQ-SCI-001..004, REQ-IFACE-001, REQ-CFG-005 |
-| Reporting | `schemas/worker-report.schema.json` (enforced via `--output-schema`) |
+| Layer | Size | Loaded |
+| --- | --- | --- |
+| Root `AGENTS.md` | ~610 tok template (cap 650) | every agent session |
+| Package `AGENTS.md` | cap 300 | embedded in the packet |
+| Constitution core | ~610 tok (cap 800) | every packet |
+| Task + REQs + excerpts | <= 1,500 each | this task only |
+| **Packet cap** | 20% x (32,000 - 4,000) = **5,600 tok** | `SPLIT_REQUIRED` above |
 
-The old rule "agents must not introduce additional governance
-frameworks... without explicit approval" stays true in spirit. This kit
-is that approval, and changes to it go through `CHANGE_CONTROL.md`.
+Profiles for 16K and 128K windows are in `governance/budgets.toml`.
+
+## Language support
+
+The process (specs, tasks, claims, packets, gates, CI, ledger) works for
+any language, and the test runner is configurable (`[commands]` in
+`budgets.toml`). Three guards parse **Python** source:
+`check_boundaries.py` (imports), `check_interfaces.py` (signatures) and
+the requirement-to-test trace (`@pytest.mark.req`). A repository in
+another language needs equivalent guards before those rules are
+enforced, until then they rely on review.
 
 ## Not verified. Check these before relying on them
 
-- **Nothing in `tools/governance/` has been executed.** No Python or
-  repository source was available, and you asked me not to run anything.
-  Expect first-run fixes. Run `lint_contracts.py` and
-  `compile_packet.py TASK-0001` first; both are read-only.
-- **Codex specifics, checked against docs on 2026-10-25:** AGENTS.md
+- **Nothing in `tools/governance/` has been executed.** Expect first-run
+  fixes. Start with the read-only commands: `lint_contracts.py`,
+  `compile_packet.py <ID>`, and `run_worker.py <ID> --dry-run`.
+- **Codex, checked against the docs on 2026-10-25:** AGENTS.md
   discovery and the 32 KiB `project_doc_max_bytes`; skills in
-  `.agents/skills` with `agents/openai.yaml`; `codex exec` flags
-  `--output-schema`, `--json`, `-o`, `--sandbox`, `--cd`,
-  `--ignore-user-config`. **Still to confirm** on your installed version:
-  prompt via stdin (`-`), the usage field names in `--json` events (token
-  budgeting reads them on a best-effort basis), and whether
-  `--output-schema` enforces OpenAI strict mode (the schema is written to
-  be strict-compatible either way).
-- **Claim mechanics.** The claim relies on
-  `git push --force-with-lease=refs/heads/task/<ID>: origin ...`, where an
-  empty expected value means "must not exist", which git documents as a
-  create-only push. Test it once with two clones racing on one task
-  before trusting it. Workers and humans need permission to create
-  `task/*` branches, but not to push to `main`. The CI trailer parsing
-  uses `%(trailers:key=...)`, which needs git 2.22 or newer.
-- Paths, symbols and line numbers in the package `AGENTS.md` files,
-  `boundaries.toml`, `interfaces.toml` and `TASK-0001` come from the
-  architecture docs at commit `a2dc941`, not from source. Re-verify them
-  against current `main`.
+  `.agents/skills` with `agents/openai.yaml`; the `codex exec` flags
+  `--output-schema`, `--json`, `-o`, `--sandbox`, `--cd` and
+  `--ignore-user-config`. **Still to confirm:** prompt via stdin (`-`),
+  the usage field names in `--json` events, and strict-mode schema
+  enforcement.
+- **Claude Code, checked against the docs:** `CLAUDE.md` `@` imports,
+  `.claude/skills` with `disable-model-invocation`, and the `claude -p`
+  flags `--model`, `--output-format json`, `--json-schema`,
+  `--max-turns`, `--permission-mode` and `--allowedTools`, plus
+  `PreToolUse` exit-2 blocking. **Still to confirm:** the result field
+  that holds the schema output, the `Bash(cmd:*)` rule syntax, and
+  whether personal settings leak into `-p` runs.
+- **Claims:** `git push --force-with-lease=refs/heads/task/<ID>: ...`
+  (an empty expected value means create-only). Test it once with two
+  clones racing on one task. CI trailer parsing needs git 2.22 or newer.
 - The `check_scope.py` heuristics (tolerance loosening, test rewrites)
   flag suspicious diffs. They do not prove them. A legitimate change
   that trips them needs a task that allows it.

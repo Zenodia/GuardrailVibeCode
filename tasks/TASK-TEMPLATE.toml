@@ -8,7 +8,7 @@ feature = "FEAT-NNNN"
 kind = "fix"            # fix | feature | refactor | test
 status = "draft"        # draft | ready | retired (claimed/done come from git)
 profile = "worker-32k"  # key in governance/budgets.toml [profiles]
-package = "physforge"   # its AGENTS.md is embedded in the packet
+package = "example_pkg" # key in specs/boundaries.toml; its AGENTS.md is embedded
 depends_on = []         # must be MERGED first. Required when scopes overlap
 feature_hash = "UNSET"  # pinned by: lint_contracts.py --pin TASK-NNNN
 supersedes = ""         # task this one replaces (that one is set retired)
@@ -29,7 +29,7 @@ forbidden = []                 # extra denials on top of boundaries.protected
 may_edit_existing_tests = false  # true only for kind="test"/"refactor"
 allow_new_dependencies = []      # import names, e.g. ["jsonschema"]
 allow_interface_change = []      # qualnames from specs/interfaces.toml
-allow_new_import_edges = []      # e.g. ["lorentzforge->dataforge"] (needs ADR)
+allow_new_import_edges = []      # e.g. ["pkg_a->pkg_b"] (needs ADR)
 max_files_changed = 4
 max_lines_changed = 300
 

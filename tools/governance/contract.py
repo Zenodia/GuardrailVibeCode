@@ -197,9 +197,11 @@ def boundaries() -> dict:
     return load_toml(ROOT / "specs" / "boundaries.toml")
 
 
-def protected_globs() -> list[str]:
+def protected_globs(include_manifests: bool = True) -> list[str]:
     p = boundaries()["protected"]
-    return [*p["always"], *p["reference_data"], *p["canonical_config"]]
+    manifests = p.get("manifests", []) if include_manifests else []
+    return [*p["always"], *manifests, *p["reference_data"],
+            *p["canonical_config"]]
 
 
 # ------------------------------------------------------------------ tasks

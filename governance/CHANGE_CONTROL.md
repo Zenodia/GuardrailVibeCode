@@ -91,11 +91,11 @@ writes them; `--claim-only` prints them for humans):
 ```
 Task: TASK-0012
 Task-Hash: sha256:...
-Reqs: REQ-DATA-003, REQ-PROV-001
+Reqs: REQ-CFG-002, REQ-DATA-002
 ```
 
 One PR implements exactly one task (CI enforces this). To trace a
-production regression: `git log --grep "Reqs:.*REQ-DATA-003"` finds every
+production regression: `git log --grep "Reqs:.*REQ-DATA-002"` finds every
 change made under that requirement, and `status/ledger/` holds each
 run's gates, attempts and blocker. Packets and event logs are kept in
 the gitignored `status/runs/`.

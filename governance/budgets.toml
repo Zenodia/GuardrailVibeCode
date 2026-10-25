@@ -8,6 +8,7 @@
 # (governance/READINESS.md) whenever the worker model changes.
 
 active_profile = "worker-32k"
+default_backend = "codex"        # codex | claude  (run_worker.py --backend)
 
 [tokenizer]
 name = "o200k_base"              # tiktoken encoding, if installed
@@ -22,6 +23,8 @@ constitution_core_max_tokens = 800
 
 [profiles.worker-16k]
 model = "CHANGE-ME-small-codex-model"
+claude_model = "CHANGE-ME-small-claude-model"
+max_turns = 40                   # claude backend: hard turn cap
 context_tokens = 16000
 reserved_system_and_tools = 3000 # Codex system prompt + tool schemas
 packet_max_fraction = 0.20       # packet <= 20% of usable context
@@ -33,6 +36,8 @@ harness_reruns = 1               # fresh-session reruns after failed gates
 
 [profiles.worker-32k]
 model = "CHANGE-ME-small-codex-model"
+claude_model = "CHANGE-ME-small-claude-model"
+max_turns = 40                   # claude backend: hard turn cap
 context_tokens = 32000
 reserved_system_and_tools = 4000
 packet_max_fraction = 0.20
@@ -44,6 +49,8 @@ harness_reruns = 1               # fresh-session reruns after failed gates
 
 [profiles.worker-128k]
 model = "CHANGE-ME-mid-codex-model"
+claude_model = "CHANGE-ME-small-claude-model"
+max_turns = 40                   # claude backend: hard turn cap
 context_tokens = 128000
 reserved_system_and_tools = 6000
 packet_max_fraction = 0.15       # long context degrades; stay lean
@@ -62,3 +69,13 @@ task_contract = 1500
 requirements = 1500
 interfaces = 1500
 baseline_evidence = 600
+
+# How the harness runs a task's acceptance test nodes (GREEN and RED
+# gates). {nodes} is replaced by the space-separated node ids from the
+# task. FILL for your stack; the default is a Python uv workspace.
+[commands]
+test_nodes = "uv run pytest -q {nodes}"
+no_tests_exit_code = 5           # runner's "no tests collected" code
+# Shell commands a Claude Code worker may run without prompting (the
+# test runner and read-only git). FILL to match test_nodes.
+claude_allowed_bash = ["uv run:*", "git diff:*", "git status:*"]

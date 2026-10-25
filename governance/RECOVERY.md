@@ -14,7 +14,7 @@ harness ever disagree, the harness limit applies.
 | --- | --- | --- |
 | CODE | Implementation defect inside `scope.allowed` | Yes |
 | TEST | A test in scope has a wrong assumption *that the packet's requirements prove wrong* | Only when the packet allows test edits; never weaken |
-| ENVIRONMENT | Missing tool, service, Docker, solver, permission, network | No. BLOCKED |
+| ENVIRONMENT | Missing tool, service, container, permission, network | No. BLOCKED |
 | SPECIFICATION | Requirement ambiguous, contradictory or impossible | No. BLOCKED |
 | ARCHITECTURE | Fix needs a new dependency, boundary crossing, public API or schema change | No. BLOCKED |
 | TOOLING | Tool malfunction, timeout, flaky infrastructure | Retry once, then BLOCKED |
@@ -60,7 +60,7 @@ Append an entry to `attempts` in your final report:
 - Deleting, skipping (`skip`, `skipif`, `xfail`), or commenting out tests.
 - Loosening tolerances (`atol`, `rtol`, `approx`), weakening assertions,
   or catching and ignoring exceptions to get a pass.
-- Mocking a solver, file or subprocess that the acceptance test is meant
+- Mocking a service, file or subprocess that the acceptance test is meant
   to exercise.
 - Bypassing lint, type, security or pre-commit gates (`noqa`,
   `type: ignore`, `--no-verify`) without packet authorization.
@@ -83,9 +83,9 @@ the evidence is useful) and return `status: "BLOCKED"` with:
 - `blocker.evidence`: the command and error excerpt.
 - `attempts`: the R3 records.
 - `blocker.needed`: the **smallest** decision or resource that unblocks
-  you (for example "approve importing dataforge from lorentzforge", "Docker
-  with ElmerSolver_mpi", "REQ-DATA-003 vs REQ-CFG-004 conflict: which
-  wins?").
+  you (for example "approve importing pkg_b from pkg_a", "a database
+  container for the integration test", "REQ-CFG-004 vs REQ-DATA-002
+  conflict: which wins?").
 
 ## R7. Completion gate
 

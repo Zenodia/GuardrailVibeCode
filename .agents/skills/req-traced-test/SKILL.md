@@ -10,7 +10,8 @@ import pytest
 
 @pytest.mark.req("REQ-CFG-003")
 def test_missing_default_config_fails_fast(tmp_path, monkeypatch):
-    # Arrange: concrete inputs, SI units, tmp_path for every file write.
+    # Arrange: concrete inputs (with units where they apply), tmp_path
+    # for every file write.
     # Act: one call, either the function or the CLI main([...]).
     # Assert: the observable behaviour named in the packet's criteria.
     ...
@@ -23,7 +24,7 @@ Rules:
 3. RED first. The harness runs your test on the pre-change code and
    expects it to fail. A test that passes there proves nothing and fails
    the RED gate.
-4. For physics or numerics, assert the units or SI scale and a value with
+4. For numeric or domain values, assert the units or scale and a value with
    an explicit `rel=`/`abs=` tolerance justified in a comment. Never use a
    bare `==` on floats.
 5. Write files under `tmp_path` only. Never touch `examples/`,
@@ -31,4 +32,4 @@ Rules:
    `tmp_path` first.
 6. Do not mock the unit you are testing. Mock only the slow or external
    boundary the packet names (for example `subprocess.run` for an
-   external solver).
+   external tool or service).

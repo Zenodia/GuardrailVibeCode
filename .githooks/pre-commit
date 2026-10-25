@@ -19,7 +19,8 @@ $PY tools/governance/check_boundaries.py >/dev/null || {
 
 # Contract lint only when contract files are staged (keeps commits fast).
 if git diff --cached --name-only | grep -Eq \
-   '^(AGENTS\.md|.*/AGENTS\.md|governance/|specs/|tasks/)'; then
+   '(^|/)(AGENTS|CLAUDE)\.md$|^(governance|specs|tasks|\.agents|\.claude)/'
+then
   $PY tools/governance/lint_contracts.py
 fi
 

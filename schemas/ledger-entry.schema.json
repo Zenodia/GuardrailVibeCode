@@ -4,7 +4,8 @@
   "description": "One file in status/ledger/ per run, written by run_worker.py (never by the model). The handoff record between fresh-context tasks.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["ts", "task_id", "status", "profile", "model", "base_commit",
+  "required": ["ts", "task_id", "status", "backend", "profile", "model",
+               "base_commit",
                "result_commit", "branch", "packet_sha256", "req_ids",
                "gates", "attempts", "usage", "blocker", "next"],
   "properties": {
@@ -12,6 +13,7 @@
     "task_id": {"type": "string"},
     "status": {"type": "string",
                "enum": ["DONE", "BLOCKED", "REJECTED", "ERROR"]},
+    "backend": {"type": "string", "enum": ["codex", "claude"]},
     "profile": {"type": "string"},
     "model": {"type": "string"},
     "base_commit": {"type": "string", "description": "main at claim time"},

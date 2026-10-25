@@ -1,4 +1,4 @@
-"""Import-boundary guard (REQ-ARCH-001/002/005, REQ-DEV-002).
+"""Import-boundary guard (REQ-ARCH-001/002/003, REQ-DEV-002).
 
     python tools/governance/check_boundaries.py            # enforce
     python tools/governance/check_boundaries.py --report   # observed graph

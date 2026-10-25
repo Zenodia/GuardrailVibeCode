@@ -73,8 +73,8 @@
     },
     "evidence_level": {
       "type": "string",
-      "enum": ["software-tests-only", "reference-comparison", "physical-validation"],
-      "description": "REQ-SCI-001: what kind of evidence supports the result."
+      "enum": ["software-tests-only", "reference-comparison", "domain-validation"],
+      "description": "REQ-QA-001: what kind of evidence supports the result."
     },
     "limitations": {"type": "array", "items": {"type": "string"}}
   }

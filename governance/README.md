@@ -1,8 +1,10 @@
 # Using the governance kit with Codex CLI
 
-How to set the kit up once, start a Codex session, and run the
-spec -> feature -> task -> code loop. Why it works this way is covered
-in `CHANGE_CONTROL.md`, `ROLES.md` and `PROTOCOL.md`.
+How to adopt the kit in a repository, start a Codex session, and run the
+spec -> feature -> task -> code loop. For Claude Code, see
+`README-claude.md`; both tools can share one repository. Why it works
+this way is covered in `CHANGE_CONTROL.md`, `ROLES.md` and
+`PROTOCOL.md`.
 
 ## The idea in one picture
 
@@ -20,8 +22,7 @@ shell: run_worker TASK-n ──► PR ──► human review ──► main ─�
 - **WORKER:** a script, `run_worker.py`, which calls `codex exec`
   non-interactively with the small model. You don't chat with it.
 - **One worker, one task, one branch (`task/<ID>`), one PR.**
-- **One feature at a time.** Tasks are written just in time, not
-  planned months ahead.
+- **One feature at a time.** Tasks are written just in time.
 
 ## Prerequisites
 
@@ -29,51 +30,65 @@ shell: run_worker TASK-n ──► PR ──► human review ──► main ─�
 | --- | --- | --- |
 | Codex CLI | current, logged in (`codex login`) | architect sessions and workers |
 | Python | 3.11+ | `tools/governance/*` (stdlib only) |
-| uv | any recent | the repo's test commands |
-| git | 2.22+ | trailer parsing in claims and CI |
+| git | 2.22+ | claims and CI trailer parsing |
+| your test runner | - | set in `governance/budgets.toml` [commands] |
 | gh | optional | opening PRs from the shell |
 
-## One-time setup
+The import, interface and traceability guards (`check_boundaries.py`,
+`check_interfaces.py`, `@pytest.mark.req`) parse Python. Other parts of
+the kit work for any language, but a non-Python repository needs its own
+versions of those three guards.
+
+## One-time adoption
 
 Do this once per repository, on its own branch and PR.
 
-1. **Install the kit.**
+1. **Copy the kit into the repo root.**
    ```bash
    git switch -c governance-kit
    ```
-   Copy the kit into the repo root, except `GOVERNANCE-KIT.md`. This
-   replaces the root `AGENTS.md` (`GOVERNANCE-KIT.md` shows where every
-   old rule went) and adds an `AGENTS.md` to each package. Then:
+   Copy everything from the kit except `GOVERNANCE-KIT.md`. If the repo
+   already has an `AGENTS.md` or `CLAUDE.md`, save it aside: the
+   bootstrap moves its rules into the kit's structure. Then:
    - move `ci/governance.yml` to `.github/workflows/` and
-     `ci/CODEOWNERS` to `.github/`, and fill in every `CHANGE-ME`;
-   - add the pytest markers and the `.gitignore` entry listed in
-     `GOVERNANCE-KIT.md` (adoption steps 2-3);
+     `ci/CODEOWNERS` to `.github/`;
+   - for Python repos, add the pytest marker
+     `"req(id): test proves the given requirement ID"`;
+   - add `status/runs/` to `.gitignore`;
    - run `git config core.hooksPath .githooks`.
-2. **Protect `main`:** require the governance checks, CODEOWNER review,
-   and **branches up to date before merging** (or a merge queue). Allow
-   developers and workers to create `task/*` branches.
-3. **Codex profiles.** Copy the `[profiles.*]` blocks from
+2. **Codex profiles.** Copy the `[profiles.*]` blocks from
    `.codex/config.example.toml` into `%USERPROFILE%\.codex\config.toml`
    (`~/.codex/config.toml` on Linux/macOS) and set real model names.
-4. **Worker model.** Set `model` in `governance/budgets.toml`. Workers
-   ignore your personal Codex config by design.
-5. **Ground the kit in the real code.**
+3. **Bootstrap.** This generates the repo-specific layer: purpose,
+   package rules, boundaries, interfaces, domain requirement drafts and
+   readiness tasks.
+   ```bash
+   codex --profile architect
+   ```
+   > $bootstrap
+
+   Run the commands it asks for, in particular:
    ```bash
    python tools/governance/check_boundaries.py --report
    ```
-   Fix `specs/boundaries.toml` or the code wherever they disagree. Then:
    ```bash
    python tools/governance/check_interfaces.py --record
    ```
    ```bash
-   python tools/governance/lint_contracts.py --trace
+   python tools/governance/lint_contracts.py
    ```
-   The `--trace` output lists MUST requirements without tests. That is
-   your first backlog of `kind = "test"` tasks.
-6. **Owner review.** A human owner confirms `specs/requirements/`
-   (approved entries restate the old `AGENTS.md`; draft entries need a
-   decision).
-7. Open the PR, get it reviewed, and merge.
+   Lint warnings about `FILL` or `CHANGE-ME` mean something is still
+   unfilled.
+4. **Worker model.** Set `model` in `governance/budgets.toml`. Workers
+   ignore your personal Codex config by design.
+5. **Owner review.** Open the PR. A human owner confirms the generic
+   baseline requirements and decides on every `draft` requirement the
+   bootstrap proposed.
+6. **Protect `main`:** require the governance checks and CODEOWNER
+   review, and **require branches to be up to date before merging** (or
+   use a merge queue). Allow `task/*` branch creation.
+7. **Readiness.** Run the RT-* tasks from the bootstrap
+   (`governance/READINESS.md`) before giving the small model real work.
 
 ## Starting a Codex session
 
@@ -89,7 +104,7 @@ codex --profile architect
 
 Then type:
 
-> $architect FEAT for: record the resolved ElmerSolver path in provenance
+> $architect FEAT for: <one-sentence intent>
 
 `$architect` loads the role, the one-feature-at-a-time workflow and the
 PR checkpoints. It is explicit-only, so a worker can never adopt it.
@@ -97,13 +112,13 @@ Without an intent after it, the session asks you for one.
 
 ### Long form (no skill)
 
-> You are ARCHITECT. Read governance/ROLES.md, then write FEAT-0003 for:
+> You are ARCHITECT. Read governance/ROLES.md, then write a FEAT for:
 > *<intent>*. Reuse existing REQs; propose new ones as draft. No code.
 
 ### Check that the kit is loaded
 
-- `/skills` should list `architect`, `author-task`, `recovery` and
-  `req-traced-test`.
+- `/skills` should list `architect`, `author-task`, `bootstrap`,
+  `recovery` and `req-traced-test`.
 - Ask "Which AGENTS.md rules apply to you?" The answer should quote the
   ARCHITECT and WORKER sections.
 
@@ -122,8 +137,8 @@ The OWNER approves, and it merges.
 
 > $architect tasks for FEAT-NNNN
 
-The session writes `tasks/TASK-*.toml` through `$author-task`. For each
-task:
+The session writes `tasks/TASK-*.toml` through the author-task skill.
+For each task:
 ```bash
 python tools/governance/lint_contracts.py --pin TASK-NNNN
 ```
@@ -188,7 +203,7 @@ Once all of its tasks are merged, start the next feature at A.
 
 ## Humans implementing a task
 
-A human developer claims a task the same way, without Codex:
+A human developer claims a task the same way, without an agent:
 ```bash
 python tools/governance/run_worker.py TASK-NNNN --claim-only
 ```
@@ -213,14 +228,13 @@ a human.
 | `open tasks A and B overlap` | Two ready tasks share files | Add `depends_on` or narrow a scope |
 | `already claimed` | `task/<ID>` exists on origin | Someone has it. If abandoned, the architect releases it |
 | `depends_on not merged yet` | Order enforcement | Merge the dependency first |
+| `no AGENTS.md for package` | Bootstrap not finished for that package | Run `$bootstrap` or add it from `governance/templates/` |
 | CI: `task contract changed since it was claimed` | Task re-pinned or edited on `main` during the run | Release the claim and re-run |
 | CI: `One PR = one task claimed once` | Mixed tasks or a stale re-run in one branch | Release, then re-run on a fresh branch |
 
 ## Before relying on it
 
 None of the scripts have been executed yet. Start with the read-only
-commands (`lint_contracts.py`, `compile_packet.py TASK-0001`,
-`run_worker.py TASK-0001 --dry-run`), and run the Worker Readiness Test
-(`READINESS.md`) before giving the small model real work. Codex details
-still to confirm on your version are listed at the end of
-`GOVERNANCE-KIT.md`.
+commands (`lint_contracts.py`, `compile_packet.py <ID>`,
+`run_worker.py <ID> --dry-run`). Codex details still to confirm on your
+version are listed at the end of `GOVERNANCE-KIT.md`.

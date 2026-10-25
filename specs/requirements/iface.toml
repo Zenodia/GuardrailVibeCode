@@ -8,7 +8,7 @@ text = """Public APIs listed in specs/interfaces.toml and registered CLI
 commands and flags must keep their signatures and behaviour unless an
 approved task authorizes the change and updates docs in the same change."""
 verify = "script:check_interfaces"
-source = "AGENTS.md#Safety and Validation (public APIs)"
+source = "kit baseline"
 
 [[requirement]]
 id = "REQ-IFACE-002"
@@ -16,19 +16,7 @@ version = 1
 status = "approved"
 level = "MUST"
 principle = ["CON-07"]
-text = """When behaviour or an interface changes, the package README and
-docs/architecture entries that describe it must be updated in the same
-change."""
+text = """When behaviour or an interface changes, the documentation that
+describes it must be updated in the same change."""
 verify = "review"
-source = "AGENTS.md#Development"
-
-[[requirement]]
-id = "REQ-IFACE-003"
-version = 1
-status = "draft"
-level = "SHOULD"
-principle = ["CON-07"]
-text = """Each console script must be registered by exactly one manifest
-(the owning package's pyproject.toml)."""
-verify = "test"
-source = "docs/architecture/architecture-findings.md (duplicate geoforge scripts)"
+source = "kit baseline"

@@ -169,6 +169,80 @@ def lint_boundaries(r: Report) -> None:
             visit(n, [])
 
 
+# ------------------------------------------------- Codex / Claude parity
+#
+# The kit serves Codex (AGENTS.md, .agents/skills) and Claude Code
+# (CLAUDE.md, .claude/skills). Both tools stay compatible only while they
+# are fed the same rules, so any Claude-only or Codex-only rule text is
+# an error. Tool-specific frontmatter keys (e.g. Claude's
+# disable-model-invocation) are allowed; name, description and body are
+# not allowed to differ.
+
+
+def _split_skill(path: Path) -> tuple[dict[str, str], str]:
+    text = path.read_text("utf-8")
+    m = re.match(r"---\n(.*?)\n---\n(.*)", text, re.S)
+    if not m:
+        raise ContractError(f"{path.relative_to(ROOT)}: no frontmatter")
+    meta = {}
+    for line in m.group(1).splitlines():
+        key, _, val = line.partition(":")
+        meta[key.strip()] = val.strip()
+    return meta, m.group(2)
+
+
+def lint_tool_parity(r: Report) -> None:
+    for path in ROOT.rglob("CLAUDE.md"):
+        if {".git", ".venv", "node_modules"} & set(path.parts):
+            continue
+        rel = path.relative_to(ROOT).as_posix()
+        if path.read_text("utf-8").strip() != "@AGENTS.md":
+            r.err(f"{rel}: must contain only '@AGENTS.md'. Put rules in "
+                  f"AGENTS.md so Codex and Claude Code follow the same "
+                  f"ones")
+        if not (path.parent / "AGENTS.md").is_file():
+            r.err(f"{rel}: imports a missing AGENTS.md")
+
+    codex_dir = ROOT / ".agents" / "skills"
+    claude_dir = ROOT / ".claude" / "skills"
+    codex = {p.parent.name: p for p in codex_dir.glob("*/SKILL.md")}
+    claude = {p.parent.name: p for p in claude_dir.glob("*/SKILL.md")}
+    for name in sorted(codex.keys() ^ claude.keys()):
+        side = ".claude/skills" if name in codex else ".agents/skills"
+        r.err(f"skill {name!r} missing from {side}; the two skill sets "
+              f"must match")
+    for name in sorted(codex.keys() & claude.keys()):
+        m1, b1 = _split_skill(codex[name])
+        m2, b2 = _split_skill(claude[name])
+        for key in ("name", "description"):
+            if m1.get(key) != m2.get(key):
+                r.err(f"skill {name!r}: frontmatter {key!r} differs "
+                      f"between .agents and .claude")
+        if b1 != b2:
+            r.err(f"skill {name!r}: body differs between .agents and "
+                  f".claude; edit both identically")
+
+
+# --------------------------------------------------------------- adoption
+
+
+def lint_adoption(r: Report) -> None:
+    """Warn while the generic kit still has unfilled placeholders. These
+    are warnings, not errors: the kit must lint while being bootstrapped."""
+    for rel in ("AGENTS.md", "governance/CONSTITUTION.md",
+                "specs/boundaries.toml", "governance/budgets.toml"):
+        path = ROOT / rel
+        if not path.is_file():
+            continue
+        text = path.read_text("utf-8")
+        n = text.count("FILL") + text.count("CHANGE-ME")
+        if n:
+            r.warn(f"{rel}: {n} unfilled FILL/CHANGE-ME placeholder(s); "
+                   f"run the bootstrap skill")
+    if "example_pkg" in boundaries().get("packages", {}):
+        r.warn("specs/boundaries.toml: still has the example_pkg template")
+
+
 # ---------------------------------------------------------------- tasks
 
 
@@ -382,6 +456,8 @@ def main(argv: list[str] | None = None) -> int:
         lint_requirements(r)
         lint_always_on(r)
         lint_boundaries(r)
+        lint_tool_parity(r)
+        lint_adoption(r)
         tasks, seen = [], {}
         for path in task_files():
             task = load_toml(path)

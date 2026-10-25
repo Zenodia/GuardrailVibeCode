@@ -10,52 +10,60 @@ The block between the `CORE` markers is the **core extract**.
 `tools/governance/compile_packet.py` copies it verbatim into every
 worker packet. Keep it under 800 tokens; the linter enforces this.
 
+These ten principles are generic. At adoption, the bootstrap skill fills
+the `FILL` notes with the repository's own domain invariants. Keep each
+one to a single short clause: the detail belongs in requirements.
+
 <!-- CORE:BEGIN -->
-- **CON-01 Physical correctness first.** A change that makes the code run
-  but changes physical meaning (units, frames, constants, sign
-  conventions, numerical method) is a defect, not a fix.
+- **CON-01 Domain correctness first.** A change that makes the code run
+  but changes domain meaning is a defect, not a fix.
+  <!-- FILL: name the invariants, e.g. "units, sign conventions,
+  numerical method" or "money rounding, time zones, idempotency". -->
 - **CON-02 Evidence over assertion.** Every claim is labelled VERIFIED
   (test, source or command output), DOCUMENTED, INFERRED or UNKNOWN.
-  Software tests passing is not physical validation.
+  Passing software tests is not domain validation.
 - **CON-03 Canonical configuration.** Config files are the single source
-  of simulation intent. There are no duplicate parameter copies, and
-  overrides are explicit and recorded.
-- **CON-04 Reproducibility and provenance.** Every result can be traced
-  to its effective config, code revision, solver/executable versions and
+  of intent. There are no duplicate parameter copies, and overrides are
+  explicit and recorded.
+- **CON-04 Reproducibility and provenance.** Every result or release can
+  be traced to its effective config, code revision, tool versions and
   inputs.
-- **CON-05 Standard scientific data.** Results are exchanged as
-  openPMD/HDF5 where the standard covers them, with units, coordinate
-  system and provenance preserved.
+- **CON-05 Declared data contracts.** Components exchange data only
+  through the artifact and interface contracts declared in `specs/`,
+  with their formats, units and meaning preserved.
+  <!-- FILL: name the standard formats, if any (e.g. "openPMD/HDF5",
+  "OpenAPI", "Avro schemas"). -->
 - **CON-06 Explicit boundaries.** Each package has one responsibility.
   Dependencies are declared, acyclic and listed in
-  `specs/boundaries.toml`. Physics stays separate from orchestration.
+  `specs/boundaries.toml`. Core logic stays separate from orchestration
+  and I/O.
 - **CON-07 Contracts are stable.** Public APIs, CLI flags, file layouts
-  and HDF5 keys change only through an approved task that cites the
+  and data keys change only through an approved task that cites the
   affected interface.
 - **CON-08 Tests are evidence, not obstacles.** Tests are never deleted,
   skipped or weakened in order to pass.
 - **CON-09 Bounded autonomy.** Work stays inside the task scope and the
   retry budget. When the budget runs out, the task is BLOCKED with
   evidence; speculative changes do not continue.
-- **CON-10 Reference data is immutable.** Reference simulation data,
-  packaged tables and published results are never modified or deleted
-  without explicit human approval.
+- **CON-10 Reference data is immutable.** Reference data, golden files,
+  fixtures marked as reference, and published results are never modified
+  or deleted without explicit human approval.
 <!-- CORE:END -->
 
 ## Rationale (not loaded into packets)
 
-- CON-01 and CON-02 exist because a plausible-looking change to a field
-  converter or integrator can pass every unit test while shifting a
-  focus position by millimetres. The only defence is to make physical
-  meaning an explicit, reviewable property of every change.
+- CON-01 and CON-02 exist because a plausible-looking change can pass
+  every unit test while quietly changing what the system means: a unit,
+  a rounding rule, an ordering guarantee. The only defence is to make
+  domain meaning an explicit, reviewable property of every change.
 - CON-03 and CON-04 exist because several developers and many agent
   runs will touch configs concurrently. Without one canonical source and
   recorded provenance, a production regression cannot be bisected to a
   config change or a code change.
-- CON-06 and CON-07 are what make hundreds of thousands of agent-written
-  lines debuggable. A failure can be localized to the package that owns
-  the artifact, because the artifact contracts between packages are
-  explicit.
+- CON-05, CON-06 and CON-07 are what make hundreds of thousands of
+  agent-written lines debuggable. A failure can be localized to the
+  package that owns the artifact, because the contracts between packages
+  are explicit.
 - CON-08 and CON-09 address the main failure mode of small coding models:
   retrying until something passes, which in practice means weakening the
   check.

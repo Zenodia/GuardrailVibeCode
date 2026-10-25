@@ -8,20 +8,19 @@ text = """Package imports must follow specs/boundaries.toml. A new import
 edge between workspace packages, or any import cycle, is forbidden unless
 an approved task explicitly adds the edge to boundaries.toml first."""
 verify = "script:check_boundaries"
-source = "AGENTS.md#Architecture (dependencies explicit; no cycles)"
+source = "kit baseline"
 
 [[requirement]]
 id = "REQ-ARCH-002"
 version = 1
 status = "approved"
 level = "MUST"
-principle = ["CON-06"]
-text = """Where two packages are coupled through a file artifact (manifest
-YAML, SIF, openPMD HDF5, NPZ), the consumer must not import the producer
-to read it. The artifact contract in specs/boundaries.toml is the
-interface."""
+principle = ["CON-05", "CON-06"]
+text = """Where two packages are coupled through a file or data artifact,
+the consumer must not import the producer to read it. The artifact
+contract in specs/boundaries.toml is the interface."""
 verify = "script:check_boundaries"
-source = "docs/architecture/package-dependencies.md (elmerforge file coupling)"
+source = "kit baseline"
 
 [[requirement]]
 id = "REQ-ARCH-003"
@@ -29,70 +28,18 @@ version = 1
 status = "approved"
 level = "MUST"
 principle = ["CON-06"]
-text = """Solver-specific code (ElmerFEM, Gmsh, WarpX, SIMION formats) must
-live behind the owning package's interface. Diagnostics, optimization and
-downstream analysis must not depend on a specific tracking, PIC or FEM
-backend."""
-verify = "review"
-source = "AGENTS.md#Architecture"
+text = """Production code must not import from explore/."""
+verify = "script:check_boundaries"
+source = "kit baseline (governance/LAYERS.md section 5)"
 
 [[requirement]]
 id = "REQ-ARCH-004"
 version = 1
 status = "approved"
-level = "MUST"
-principle = ["CON-01", "CON-06"]
-text = """Orchestration code (ebe) coordinates execution and must not
-redefine physical models, numerical algorithms, or physical defaults owned
-by another package."""
-verify = "review"
-source = "AGENTS.md#Separation of Concerns"
-
-[[requirement]]
-id = "REQ-ARCH-005"
-version = 1
-status = "approved"
-level = "MUST"
-principle = ["CON-06"]
-text = """Code under src/ and packages/ must not import from explore/."""
-verify = "script:check_boundaries"
-source = "governance/LAYERS.md#5"
-
-[[requirement]]
-id = "REQ-ARCH-006"
-version = 1
-status = "approved"
 level = "PREFER"
 principle = ["CON-06"]
-text = """Prefer established scientific libraries and validated numerical
-methods over custom implementations, and avoid abstractions that have
-only one implementation and no planned second."""
+text = """Prefer established libraries and validated methods over custom
+implementations, and avoid abstractions that have only one
+implementation and no planned second."""
 verify = "review"
-source = "AGENTS.md#Architecture"
-
-[[requirement]]
-id = "REQ-ARCH-007"
-version = 1
-status = "draft"
-level = "MUST"
-principle = ["CON-06", "CON-05"]
-text = """FEM results (electric current I, current density J, magnetic flux
-density B, magnetic field strength H, electric field E, electric
-potential V, temperature T) must be exposed to other packages through a
-backend-independent interface, so that ElmerFEM can be replaced without
-changing consumers."""
-verify = "review"
-source = "AGENTS.md#Purpose and #Architecture (forward-looking: only B is exported today)"
-
-[[requirement]]
-id = "REQ-ARCH-008"
-version = 1
-status = "draft"
-level = "MUST"
-principle = ["CON-06"]
-text = """Particle tracking must be selectable between the custom
-integrator and external frameworks (including WarpX PIC) behind one
-interface whose inputs and outputs are the ART-SOURCE and ART-TRACKS
-artifact contracts."""
-verify = "review"
-source = "AGENTS.md#Architecture (forward-looking: no WarpX adapter exists)"
+source = "kit baseline"

@@ -1,0 +1,7 @@
+# Explicit invocation only ($bootstrap). Bootstrapping rewrites the
+# repo-specific governance layer; it must never be triggered implicitly.
+interface:
+  display_name: "Bootstrap governance kit"
+  short_description: "Adapt the kit to this repository (one-time)"
+policy:
+  allow_implicit_invocation: false

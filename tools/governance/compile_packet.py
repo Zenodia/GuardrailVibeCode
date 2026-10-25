@@ -136,7 +136,7 @@ def _render_interfaces(task: dict) -> tuple[str, dict]:
                        *a.get("mutators", []), *a.get("alt_producers", [])}]
     if arts:
         out += ["", "### Artifact contracts touching this package "
-                "(REQ-DATA-005)"]
+                "(REQ-DATA-002)"]
         for a in arts:
             keys = ", ".join(a.get("keys", [])) or "(no frozen keys)"
             out.append(f"- {a['id']} {a['name']} [{a['status']}]: "
@@ -149,14 +149,19 @@ def _render_interfaces(task: dict) -> tuple[str, dict]:
 
 
 def package_rules(pkg: str) -> str:
-    rel = boundaries()["packages"][pkg]["path"]
-    parts = Path(rel).parts
-    # packages/<name>/src/<name> -> packages/<name>; src/ebe stays.
-    agents_dir = Path(*parts[:2]) if parts[0] == "packages" else Path(rel)
-    path = ROOT / agents_dir / "AGENTS.md"
-    if not path.is_file():
-        raise ContractError(f"missing {path.relative_to(ROOT)}")
-    return path.read_text("utf-8").strip()
+    """The nearest AGENTS.md at or above the package path, below the root.
+
+    Layouts differ (src/<pkg>, packages/<pkg>/src/<pkg>, services/<pkg>),
+    so the file is found by walking up rather than by assuming one.
+    """
+    start = ROOT / boundaries()["packages"][pkg]["path"]
+    for d in [start, *start.parents]:
+        if d == ROOT or ROOT not in d.parents:
+            break
+        if (d / "AGENTS.md").is_file():
+            return (d / "AGENTS.md").read_text("utf-8").strip()
+    raise ContractError(f"no AGENTS.md for package {pkg!r} at or above "
+                        f"{start.relative_to(ROOT)}; run the bootstrap skill")
 
 
 def _trim_baseline(text: str, cap: int) -> str:

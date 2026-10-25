@@ -2,8 +2,12 @@
 context, external budgets and harness-verified gates.
 
     python tools/governance/run_worker.py TASK-0001 [--profile P]
-        [--dry-run] [--commit] [--codex codex]
+        [--backend codex|claude] [--dry-run] [--commit]
     python tools/governance/run_worker.py TASK-0001 --claim-only   # humans
+
+Backends: `codex` runs `codex exec`; `claude` runs `claude -p`. Only the
+agent invocation differs. The packet, claim, gates, report schema and
+ledger are shared, so the guarantees do not depend on which agent ran.
 
 One task, one worker. The claim is the task branch `task/<ID>`, created
 atomically on origin (a create-only push), so a second claim fails on
@@ -26,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shlex
 import shutil
 import subprocess
@@ -42,8 +47,8 @@ import check_interfaces  # noqa: E402
 import check_scope  # noqa: E402
 from compile_packet import compile_packet  # noqa: E402
 from contract import (  # noqa: E402
-    ROOT, ContractError, git, load_task, load_toml, main_ref, merged_tasks,
-    profile, task_branch, task_sha,
+    ROOT, ContractError, budgets, git, load_task, load_toml, main_ref,
+    merged_tasks, profile, task_branch, task_sha,
 )
 from lint_contracts import Report, lint_task  # noqa: E402
 
@@ -133,16 +138,24 @@ def codex_command(codex: str, prof: dict, report_path: Path) -> list[str]:
     ]
 
 
-def run_codex(cmd: list[str], packet: str, prof: dict,
-              events_path: Path) -> dict:
-    """Stream JSONL events, enforce wall clock and output-token budgets."""
+def worker_env(task_id: str) -> dict[str, str]:
+    # Read by .claude/settings.json's PreToolUse hook (guard_edit.py) to
+    # apply the worker's full protected list and task scope at edit time.
+    # Codex ignores these; its edits are checked after the run instead.
+    return {**os.environ, "GOV_ROLE": "worker", "GOV_TASK": task_id}
+
+
+def run_codex(cmd: list[str], packet: str, prof: dict, events_path: Path,
+              report_path: Path, env: dict[str, str]) -> dict:
+    """Stream JSONL events, enforce wall clock and output-token budgets.
+    Codex writes the report itself (--output-last-message)."""
     deadline = time.monotonic() + prof["wall_clock_minutes"] * 60
     max_out = prof["max_output_tokens_per_task"]
     usage = {"input_tokens": 0, "output_tokens": 0}
     killed = None
     proc = subprocess.Popen(cmd, cwd=ROOT, stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            text=True, encoding="utf-8")
+                            text=True, encoding="utf-8", env=env)
     assert proc.stdin and proc.stdout
     proc.stdin.write(packet)
     proc.stdin.close()
@@ -172,7 +185,77 @@ def run_codex(cmd: list[str], packet: str, prof: dict,
     return {"exit": proc.returncode, "killed": killed, "usage": usage}
 
 
+def claude_allowed_tools() -> list[str]:
+    # Tools a Claude worker may use without prompting. Shell access is
+    # limited to the configured test runner and read-only git: no
+    # commits, pushes or installs. CONFIRM the rule syntax ("Bash(cmd:*)")
+    # against your Claude Code version's permission docs.
+    bash = budgets()["commands"].get(
+        "claude_allowed_bash", ["git diff:*", "git status:*"])
+    return ["Read", "Edit", "Write", "Glob", "Grep",
+            *(f"Bash({rule})" for rule in bash)]
+
+
+def claude_command(claude: str, prof: dict) -> list[str]:
+    # No --ignore-user-config equivalent is confirmed for Claude Code, so
+    # the run is pinned through explicit flags instead: model, schema,
+    # turn cap, edit-only permission mode and an allow-list of tools.
+    return [
+        claude, "-p",
+        "--model", prof["claude_model"],
+        "--output-format", "json",
+        "--json-schema", SCHEMA.read_text("utf-8"),
+        "--max-turns", str(prof.get("max_turns", 40)),
+        "--permission-mode", "acceptEdits",
+        "--allowedTools", *claude_allowed_tools(),
+    ]
+
+
+def run_claude(cmd: list[str], packet: str, prof: dict, events_path: Path,
+               report_path: Path, env: dict[str, str]) -> dict:
+    """Run `claude -p` with the packet on stdin, bounded by wall clock and
+    --max-turns, then extract the schema-constrained report."""
+    usage = {"input_tokens": 0, "output_tokens": 0}
+    try:
+        p = subprocess.run(cmd, cwd=ROOT, input=packet, capture_output=True,
+                           text=True, encoding="utf-8", env=env,
+                           timeout=prof["wall_clock_minutes"] * 60)
+    except subprocess.TimeoutExpired:
+        return {"exit": 124, "usage": usage,
+                "killed": f"wall clock {prof['wall_clock_minutes']} min"}
+    events_path.write_text(p.stdout + "\n" + p.stderr, "utf-8")
+    try:
+        out = json.loads(p.stdout)
+    except json.JSONDecodeError:
+        return {"exit": p.returncode, "killed": None, "usage": usage}
+    u = out.get("usage") or {}
+    usage["input_tokens"] = int(u.get("input_tokens") or 0)
+    usage["output_tokens"] = int(u.get("output_tokens") or 0)
+    if out.get("subtype") == "error_max_turns":
+        return {"exit": p.returncode, "usage": usage,
+                "killed": f"max turns {prof.get('max_turns', 40)}"}
+    # CONFIRM the field name on your version: the schema-constrained
+    # object is expected in `structured_output`; fall back to parsing
+    # the text `result`.
+    report = out.get("structured_output")
+    if report is None:
+        try:
+            report = json.loads(out.get("result") or "")
+        except json.JSONDecodeError:
+            report = None
+    if report is not None:
+        report_path.write_text(json.dumps(report, indent=2), "utf-8")
+    return {"exit": p.returncode, "killed": None, "usage": usage,
+            "cost_usd": out.get("total_cost_usd")}
+
+
 # ------------------------------------------------------------------ gates
+
+
+def test_command(nodes: list[str]) -> str:
+    # The runner is configuration ([commands] in budgets.toml), so the
+    # harness works for any stack that can run named test nodes.
+    return budgets()["commands"]["test_nodes"].format(nodes=" ".join(nodes))
 
 
 def red_gate(task: dict, base: str) -> tuple[str, str]:
@@ -192,13 +275,13 @@ def red_gate(task: dict, base: str) -> tuple[str, str]:
                 return "fail", f"acceptance test file missing: {f}"
             (tmp / f).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, tmp / f)
-        code, out = sh("uv run pytest -q " + " ".join(nodes), tmp,
+        code, out = sh(test_command(nodes), tmp,
                        task["validate"].get("timeout_seconds", 600))
-        # 5 = no tests collected: the named test does not exist.
         if code == 0:
             return "fail", "acceptance tests PASS on the base code; they " \
                            "do not detect the defect\n" + out[-2000:]
-        if code == 5:
+        # "No tests collected": the named test does not exist.
+        if code == budgets()["commands"].get("no_tests_exit_code", 5):
             return "fail", "acceptance test nodes not found\n" + out[-2000:]
         return "pass", out[-1500:]
     finally:
@@ -211,8 +294,8 @@ def evaluate(task: dict, base: str,
     gates, evidence = {}, {}
     timeout = task["validate"].get("timeout_seconds", 600)
     ok, log = run_all(task["validate"]["commands"] +
-                      ["uv run pytest -q " +
-                       " ".join(task["acceptance"]["tests"])], ROOT, timeout)
+                      [test_command(task["acceptance"]["tests"])], ROOT,
+                      timeout)
     gates["GREEN"], evidence["GREEN"] = ("pass" if ok else "fail"), log
     gates["RED"], evidence["RED"] = red_gate(task, base)
 
@@ -309,9 +392,12 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Claim and run one task")
     ap.add_argument("task_id")
     ap.add_argument("--profile")
-    ap.add_argument("--codex", default="codex")
+    ap.add_argument("--backend", choices=["codex", "claude"],
+                    default=budgets().get("default_backend", "codex"))
+    ap.add_argument("--agent-bin",
+                    help="path to the codex or claude executable")
     ap.add_argument("--dry-run", action="store_true",
-                    help="compile and print the codex command only")
+                    help="compile and print the agent command only")
     ap.add_argument("--claim-only", action="store_true",
                     help="claim for a human developer and stop")
     ap.add_argument("--commit", action="store_true",
@@ -327,7 +413,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     entry = {
         "ts": now(), "task_id": task["id"], "status": "ERROR",
-        "profile": prof["name"], "model": prof["model"],
+        "backend": args.backend, "profile": prof["name"],
+        "model": prof["claude_model" if args.backend == "claude"
+                      else "model"],
         "base_commit": "", "result_commit": None,
         "branch": None, "packet_sha256": "", "req_ids":
         sorted(task["requirements"]), "gates": {g: "not-run" for g in GATES},
@@ -363,10 +451,14 @@ def main(argv: list[str] | None = None) -> int:
     run_dir = ROOT / "status" / "runs" / task["id"] / \
         entry["ts"].replace(":", "")
     report_path = run_dir / "report.json"
-    cmd = codex_command(args.codex, prof, report_path)
+    binary = args.agent_bin or args.backend
+    if args.backend == "claude":
+        cmd, run_agent = claude_command(binary, prof), run_claude
+    else:
+        cmd, run_agent = codex_command(binary, prof, report_path), run_codex
     if args.dry_run:
         print(packet)
-        print("\n# codex command:\n" + shlex.join(cmd))
+        print(f"\n# {args.backend} command:\n" + shlex.join(cmd))
         print(json.dumps(manifest, indent=2))
         return 0
 
@@ -415,8 +507,9 @@ def main(argv: list[str] | None = None) -> int:
             entry["attempts"] = attempt + 1
             if report_path.exists():
                 report_path.unlink()
-            res = run_codex(cmd, packet, prof,
-                            run_dir / f"events-{attempt + 1}.jsonl")
+            res = run_agent(cmd, packet, prof,
+                            run_dir / f"events-{attempt + 1}.jsonl",
+                            report_path, worker_env(task["id"]))
             for k in ("input_tokens", "output_tokens"):
                 entry["usage"][k] = (entry["usage"][k] or 0) + \
                     res["usage"][k]

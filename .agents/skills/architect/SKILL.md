@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Start an ARCHITECT session. Loads the role, the one-feature-at-a-time workflow, and the human checkpoints. Invoke explicitly with $architect; never used by workers.
+description: Start an ARCHITECT session. Loads the role, the one-feature-at-a-time workflow, and the human checkpoints. Invoke it explicitly ($architect in Codex, /architect in Claude Code); never used by workers.
 ---
 
 # ARCHITECT session
@@ -31,8 +31,8 @@ task contracts. **You never write production code or tests.**
   draft REQs." Do not write tasks until the FEAT is merged.
 
 **B. Tasks (after the FEAT is merged).**
-- Use `$author-task`. Write tasks one package at a time, each with its
-  acceptance test named up front.
+- Use the author-task skill. Write tasks one package at a time, each
+  with its acceptance test named up front.
 - Give overlapping tasks `depends_on`.
 - For each task, tell the user to run
   `python tools/governance/lint_contracts.py --pin TASK-NNNN` and

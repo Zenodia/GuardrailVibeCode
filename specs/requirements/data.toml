@@ -4,68 +4,21 @@ version = 1
 status = "approved"
 level = "MUST"
 principle = ["CON-05"]
-text = """Physical simulation results that openPMD can represent
-(particle distributions, trajectories, electromagnetic fields) must be
-written as openPMD-conformant HDF5."""
-verify = "test"
-source = "AGENTS.md#Scientific Data and Results"
+text = """Packages must exchange data through the artifact contracts in
+specs/boundaries.toml, not through tool- or backend-native formats.
+Native files may exist only as intermediate artifacts."""
+verify = "review"
+source = "kit baseline"
 
 [[requirement]]
 id = "REQ-DATA-002"
 version = 1
 status = "approved"
 level = "MUST"
-principle = ["CON-05"]
-text = """Packages must exchange physical results through the standardized
-artifact contracts in specs/boundaries.toml, not through solver-native
-formats. Solver-native files may exist only as intermediate artifacts."""
-verify = "review"
-source = "AGENTS.md#Scientific Data and Results"
-
-[[requirement]]
-id = "REQ-DATA-003"
-version = 1
-status = "approved"
-level = "MUST"
-principle = ["CON-01", "CON-05"]
-text = """Every data conversion must preserve physical units, coordinate
-system and numerical precision. A conversion test must assert units or
-SI scale and a round-trip or reference value with a stated tolerance."""
-verify = "test"
-source = "AGENTS.md#Scientific Data and Results"
-
-[[requirement]]
-id = "REQ-DATA-004"
-version = 1
-status = "approved"
-level = "MUST"
-principle = ["CON-05", "CON-04"]
-text = """Simulation outputs must carry units, coordinate system,
-provenance and a reference to the effective configuration as metadata."""
-verify = "test"
-source = "AGENTS.md#Scientific Data and Results"
-
-[[requirement]]
-id = "REQ-DATA-005"
-version = 1
-status = "approved"
-level = "MUST"
 principle = ["CON-07"]
-text = """Keys, dataset paths and record names listed as an artifact
-contract in specs/boundaries.toml must not be renamed, removed or change
-meaning without an approved task that updates the contract and every
-listed consumer in the same change."""
+text = """Keys, paths and field names listed as an artifact contract in
+specs/boundaries.toml must not be renamed, removed or change meaning
+without an approved task that updates the contract and every listed
+consumer in the same change."""
 verify = "test"
-source = "docs/architecture/data-flow.md (producer/consumer table)"
-
-[[requirement]]
-id = "REQ-DATA-006"
-version = 1
-status = "draft"
-level = "MUST"
-principle = ["CON-07"]
-text = """The physical-group manifest (GeoForge -> PhysForge ->
-ElmerForge) must have one versioned, packaged schema covering its final
-enriched form, validated by each producer before writing."""
-verify = "test"
-source = "docs/architecture/architecture-findings.md (manifest mutated across three packages without a schema)"
+source = "kit baseline"

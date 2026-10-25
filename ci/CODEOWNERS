@@ -1,30 +1,25 @@
-# Copy to .github/CODEOWNERS. Replace @CHANGE-ME with real owners.
-# This enforces governance/CHANGE_CONTROL.md section 3: the contract is
-# changed by people, and the scripts only enforce it.
+# Copy to .github/CODEOWNERS. Replace every @CHANGE-ME with real owners.
+# This enforces governance/CHANGE_CONTROL.md: the contract is changed by
+# people, and the scripts only enforce it.
 
 /AGENTS.md                      @CHANGE-ME-maintainers
 **/AGENTS.md                    @CHANGE-ME-maintainers
+/CLAUDE.md                      @CHANGE-ME-maintainers
 /governance/                    @CHANGE-ME-maintainers
 /governance/CONSTITUTION.md     @CHANGE-ME-owner
 /specs/                         @CHANGE-ME-architects
+/specs/requirements/            @CHANGE-ME-owner
 /specs/boundaries.toml          @CHANGE-ME-owner
 /specs/interfaces.toml          @CHANGE-ME-owner
 /tasks/                         @CHANGE-ME-architects
 /tools/governance/              @CHANGE-ME-maintainers
 /ci/                            @CHANGE-ME-maintainers
 /.agents/                       @CHANGE-ME-maintainers
+/.claude/                       @CHANGE-ME-maintainers
 
-# Reference data and canonical configs (CON-10, REQ-CFG-005)
-/packages/twi/src/twi/data/     @CHANGE-ME-owner
-/tests/integration/             @CHANGE-ME-owner
+# FILL: reference data and canonical configs (CON-10, REQ-CFG-005,
+# REQ-QA-002). Same paths as [protected] in specs/boundaries.toml.
+# /path/to/reference/data/      @CHANGE-ME-owner
 
-# Package owners (also in specs/boundaries.toml `owner`)
-/src/ebe/                       @CHANGE-ME
-/packages/geoforge/             @CHANGE-ME
-/packages/physforge/            @CHANGE-ME
-/packages/elmerforge/           @CHANGE-ME
-/packages/dataforge/            @CHANGE-ME
-/packages/beamforge/            @CHANGE-ME
-/packages/twi/                  @CHANGE-ME
-/packages/lorentzforge/         @CHANGE-ME
-/packages/beamdiag/             @CHANGE-ME
+# FILL: one line per package (also `owner` in specs/boundaries.toml).
+# /src/example_pkg/             @CHANGE-ME

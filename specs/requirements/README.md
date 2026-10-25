@@ -15,15 +15,16 @@ One TOML file per domain. Parsed by `tools/governance/contract.py`
 - `principle`: the CON-* principles this requirement refines.
 - `source`: where it came from.
 
-## Seed provenance
+## What ships with the kit
 
-Entries marked `approved` restate rules from the original human-authored
-`AGENTS.md`, and their `source` says which section. A human owner should
-still confirm them in the adoption PR. Entries marked `draft` were
-derived from `docs/architecture/architecture-findings.md` (audit at
-commit `a2dc941`). They are proposals and cannot be cited by a task
-until a human approves them.
+The files here hold a **generic baseline** (20 requirements, `source =
+"kit baseline"`) that applies to any repository: import boundaries
+(ARCH), configuration discipline (CFG), data contracts (DATA), evidence
+and test integrity (QA), interfaces (IFACE) and development practice
+(DEV). A human owner confirms or edits them at adoption.
 
-Domains: ARCH (boundaries), CFG (configuration), DATA (scientific data
-and artifact contracts), PROV (provenance), SCI (scientific integrity),
-IFACE (public interfaces), DEV (development practice).
+Domain requirements, such as data formats, numerical methods,
+provenance rules or business invariants, are added at adoption by the
+`bootstrap` skill as `status = "draft"` in new domain files (for example
+`prov.toml`, `billing.toml`). They become binding only when an owner
+approves them.

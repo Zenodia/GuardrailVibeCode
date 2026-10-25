@@ -1,0 +1,34 @@
+[[requirement]]
+id = "REQ-QA-001"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-02"]
+text = """Reports must distinguish software test success from domain
+validation, and must not claim validation without evidence (a named
+reference case, comparison, or measurement)."""
+verify = "review"
+source = "kit baseline"
+
+[[requirement]]
+id = "REQ-QA-002"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-10"]
+text = """Files matching protected.reference_data in specs/boundaries.toml
+must not be modified, regenerated or deleted without explicit human
+approval recorded in the task."""
+verify = "script:check_scope"
+source = "kit baseline"
+
+[[requirement]]
+id = "REQ-QA-003"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-08", "CON-01"]
+text = """Tolerances and thresholds in existing tests must not be loosened
+without an approved task citing the justification."""
+verify = "script:check_scope"
+source = "kit baseline (governance/RECOVERY.md R5)"

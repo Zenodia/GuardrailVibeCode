@@ -7,7 +7,7 @@ follow this; the WORKER only sees its result (a packet).
 
 | Layer | Source | Loaded | Budget |
 | --- | --- | --- | --- |
-| Always-on rules | root + package `AGENTS.md` (Codex auto-load) | Every task | <= 1,000 tok |
+| Always-on rules | root `AGENTS.md` (auto-loaded) + package `AGENTS.md` (embedded) | Every task | <= 1,000 tok |
 | Core principles | `CONSTITUTION.md` CORE block, verbatim | Every packet | <= 800 |
 | Task contract | `tasks/TASK-*.toml` rendered | This task | <= 1,500 |
 | Requirements | cited IDs, **verbatim text** | This task | <= 1,500 |
@@ -38,7 +38,7 @@ reads, tool output, reasoning and headroom.
 
 ```
 lint task (pins, status, deps merged) -> compile packet -> CLAIM task/<ID>
-  -> BASELINE gate -> codex exec (fresh session, hermetic, budgeted)
+  -> BASELINE gate -> codex exec | claude -p (fresh session, budgeted)
   -> RED/GREEN gates re-run by harness -> GUARD gate -> REPORT gate
   -> ledger entry -> (DONE: branch ready for review | BLOCKED: escalate)
 ```

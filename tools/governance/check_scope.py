@@ -1,4 +1,4 @@
-"""Scope and test-integrity guard (REQ-DEV-003, REQ-SCI-003/004, CON-08).
+"""Scope and test-integrity guard (REQ-DEV-003, REQ-QA-002/003, CON-08).
 
     python tools/governance/check_scope.py --task TASK-0001 [--base REV]
     python tools/governance/check_scope.py --staged      # pre-commit, human
@@ -116,9 +116,7 @@ def check(task: dict | None, base: str | None, staged: bool) -> list[dict]:
         # data stays protected for everyone (CON-10).
         protected = boundaries()["protected"]["reference_data"]
     elif scope.get("allow_new_dependencies"):
-        protected = [p for p in protected
-                     if p not in {"pyproject.toml", "packages/*/pyproject.toml",
-                                  "uv.lock"}]
+        protected = protected_globs(include_manifests=False)
 
     for status, path in rows:
         if matches(path, protected):
@@ -186,7 +184,7 @@ def _scan_diff(path: str, diff: str) -> list[dict]:
         if key in old_tol and val > old_tol[key]:
             v.append({"path": path, "rule": "tolerance-loosened",
                       "detail": f"{key} {old_tol[key]} -> {val} "
-                                f"(REQ-SCI-004)"})
+                                f"(REQ-QA-003)"})
     return v
 
 

@@ -52,6 +52,10 @@ jobs:
             --task-hash "$h"
           python tools/governance/check_scope.py --task "$t" --base "$base"
 
+  # FILL: the repository's own build, lint and test commands. The
+  # example below is for a Python uv workspace. Tests that need external
+  # services run in a separate job that has those services; never mock a
+  # service just to make this job green (RECOVERY.md R5).
   tests:
     runs-on: ubuntu-latest
     steps:
@@ -60,10 +64,7 @@ jobs:
       - run: uv sync --all-packages --locked
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      # Solver-backed integration tests need the Docker image documented
-      # in docs/engineering/docker-environment.md. Run them in a separate
-      # job on that image; never mock the solver to make this job green.
-      - run: timeout 1800 uv run pytest -q -m "not solver"
+      - run: timeout 1800 uv run pytest -q
 
   security:
     runs-on: ubuntu-latest
@@ -74,7 +75,8 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
       - uses: astral-sh/setup-uv@v6
       - name: SAST (shell=True, unsafe yaml/pickle, eval)
-        run: uvx bandit -r src packages -x '*/tests/*' -ll
+        # FILL: source directories to scan.
+        run: uvx bandit -r . -x '*/tests/*,./explore/*' -ll
       - name: SCA (known-vulnerable locked deps)
         run: |
           uv export --frozen --no-hashes > /tmp/req.txt

@@ -1,20 +1,18 @@
 # AGENTS.md
 
-Python uv workspace for electron-beam simulation and optimization
-(geometry -> FEM field -> source -> tracking -> diagnostics). Physical
-correctness and reproducibility outrank speed.
+<!-- FILL: one or two sentences: what this repo does, what matters most. -->
 
 ## If you are a WORKER (you were given a TASK packet)
 
 1. The packet is your scope. Read only the files it lists. Do not read
-   `specs/`, `governance/` or `docs/architecture/` unless the packet names
+   `specs/`, `governance/` or architecture docs unless the packet names
    a section. Do not explore the repository.
 2. Requirement text in the packet is quoted verbatim and binding. The
    full text in `specs/requirements/` is authoritative; a requirement
    left out of the packet is still in force.
 3. Edit only paths in `scope.allowed`. Never edit `AGENTS.md`,
-   `governance/`, `specs/`, `tasks/`, `.agents/`, `.codex/`, `ci/`,
-   or reference data.
+   `CLAUDE.md`, `governance/`, `specs/`, `tasks/`, `.agents/`, `.claude/`,
+   `.codex/`, `ci/`, or reference data.
 4. Test first: write or locate the failing acceptance test, then fix.
 5. Run exactly the packet's `validate` commands. Never claim a check
    passed that you did not run.
@@ -30,13 +28,14 @@ correctness and reproducibility outrank speed.
 
 ## If you are an ARCHITECT or REVIEWER
 
-Start with `$architect`, or read `governance/ROLES.md`. Specs change
-only through `governance/CHANGE_CONTROL.md`.
+Use the `architect` skill (`$architect` in Codex, `/architect` in Claude
+Code) or read `governance/ROLES.md`. Specs change only through
+`governance/CHANGE_CONTROL.md`.
 
 ## Always
 
-- Preserve SI units, coordinate conventions and provenance.
-- Software tests passing does not mean the physics is validated. Say which
-  one you have evidence for.
+- Preserve the domain invariants named in the constitution (units,
+  formats, conventions). Passing tests is not domain validation. Say
+  which one you have evidence for.
 - No commits or pushes unless the packet says so.
-- Line length 80, Ruff config. Tests: `uv run pytest <path> -q`.
+- <!-- FILL: lint rule --> Tests: <!-- FILL: test command -->

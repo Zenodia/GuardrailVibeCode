@@ -11,7 +11,7 @@ packages: [<package>]
 
 ## Intent
 
-Two or three sentences: what changes for the user or physicist, and why.
+Two or three sentences: what changes for the user, and why.
 No implementation.
 
 ## Out of scope
@@ -33,10 +33,10 @@ Scenario: <observable behaviour>
   Then <observable outcome with tolerance>
 ```
 
-## Physics and validation notes
+## Domain validation notes
 
-Which outcomes are software checks and which need physical validation
-(REQ-SCI-001)? Name the reference case or comparison if there is one.
+Which outcomes are software checks and which need domain validation
+(REQ-QA-001)? Name the reference case or comparison if there is one.
 
 ## Task breakdown (ARCHITECT fills in)
 
