@@ -119,7 +119,8 @@ def claim(task_id: str) -> str:
 # ------------------------------------------------------------------ codex
 
 
-def codex_command(codex: str, prof: dict, report_path: Path) -> list[str]:
+def codex_command(codex: str, prof: dict, report_path: Path,
+                  effort: str) -> list[str]:
     # --ignore-user-config makes the run hermetic: a developer's personal
     # ~/.codex/config.toml (model, approvals, MCP servers) must not change
     # what a worker can do. Everything that matters is set explicitly.
@@ -131,6 +132,7 @@ def codex_command(codex: str, prof: dict, report_path: Path) -> list[str]:
         "--sandbox", "workspace-write",
         "--ignore-user-config",
         "-c", f'model="{prof["model"]}"',
+        "-c", f'model_reasoning_effort="{effort}"',
         "--output-schema", str(SCHEMA),
         "--output-last-message", str(report_path),
         "--json",
@@ -368,6 +370,14 @@ def feedback_packet(packet: str, gates: dict, evidence: dict) -> str:
 # ------------------------------------------------------------------- main
 
 
+def worker_effort(task: dict, prof: dict) -> str:
+    """The task may lower the profile default (e.g. to low for mechanical
+    work), never raise it: lint_contracts.py rejects values outside
+    budgets.toml [effort].worker_allowed."""
+    return task.get("reasoning_effort") or prof.get("reasoning_effort",
+                                                     "medium")
+
+
 def preflight(task: dict, path: Path) -> dict | None:
     """Return a blocker dict if the task may not be claimed."""
     r = Report()
@@ -411,9 +421,12 @@ def main(argv: list[str] | None = None) -> int:
     except ContractError as exc:
         print(f"ERROR {exc}")
         return 1
+    effort = worker_effort(task, prof)
     entry = {
         "ts": now(), "task_id": task["id"], "status": "ERROR",
         "backend": args.backend, "profile": prof["name"],
+        # Codex only: no effort flag is confirmed for `claude -p`.
+        "reasoning_effort": effort if args.backend == "codex" else "n/a",
         "model": prof["claude_model" if args.backend == "claude"
                       else "model"],
         "base_commit": "", "result_commit": None,
@@ -455,7 +468,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.backend == "claude":
         cmd, run_agent = claude_command(binary, prof), run_claude
     else:
-        cmd, run_agent = codex_command(binary, prof, report_path), run_codex
+        cmd = codex_command(binary, prof, report_path, effort)
+        run_agent = run_codex
     if args.dry_run:
         print(packet)
         print(f"\n# {args.backend} command:\n" + shlex.join(cmd))

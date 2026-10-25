@@ -243,6 +243,22 @@ def lint_adoption(r: Report) -> None:
         r.warn("specs/boundaries.toml: still has the example_pkg template")
 
 
+def worker_efforts() -> set[str]:
+    return set(budgets().get("effort", {}).get("worker_allowed",
+                                                ["low", "medium"]))
+
+
+def lint_effort(r: Report) -> None:
+    """Workers never reason above the allowed range, not even through a
+    profile default. Escalation is BLOCKED -> ARCHITECT, not more effort."""
+    allowed = worker_efforts()
+    for name, prof in budgets().get("profiles", {}).items():
+        effort = prof.get("reasoning_effort", "medium")
+        if effort not in allowed:
+            r.err(f"budgets.toml profile {name}: reasoning_effort "
+                  f"{effort!r} not in worker_allowed {sorted(allowed)}")
+
+
 # ---------------------------------------------------------------- tasks
 
 
@@ -268,6 +284,11 @@ def lint_task(task: dict, path: Path, r: Report) -> None:
         r.err(f"{where}: {exc}")
     if task["package"] not in boundaries()["packages"]:
         r.err(f"{where}: package {task['package']!r} not in boundaries")
+    effort = task.get("reasoning_effort")
+    if effort is not None and effort not in worker_efforts():
+        r.err(f"{where}: reasoning_effort {effort!r} not in "
+              f"{sorted(worker_efforts())}. A task that needs more reasoning "
+              f"needs a better spec or a split, not a higher effort")
 
     # Pins: a ready task must match the specs it was written against.
     ready = task["status"] == "ready"
@@ -458,6 +479,7 @@ def main(argv: list[str] | None = None) -> int:
         lint_boundaries(r)
         lint_tool_parity(r)
         lint_adoption(r)
+        lint_effort(r)
         tasks, seen = [], {}
         for path in task_files():
             task = load_toml(path)

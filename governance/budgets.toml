@@ -21,9 +21,31 @@ package_agents_md_max_tokens = 300
 chain_max_tokens = 1000          # root + deepest package file combined
 constitution_core_max_tokens = 800
 
+# Reasoning effort (Codex `model_reasoning_effort`). The rule: workers
+# execute narrow, fully specified contracts, so they never think above
+# `medium`, even on harness reruns. A worker that fails uses its retry
+# budget and reports BLOCKED; the debugging (why it failed, what to
+# change) happens in the ARCHITECT session at `xhigh`. Letting a failing
+# worker "think harder" is a quieter form of retrying until it passes.
+#
+# - `medium` is the worker default: noticing that it must STOP (a
+#   contradiction, a missing tool) is judgment, and `low` is where small
+#   models plough ahead.
+# - `low` is for mechanical tasks only (renames, fixture updates). The
+#   ARCHITECT sets it per task with `reasoning_effort = "low"`.
+# - Architect `xhigh` and reviewer `high` are set in the Codex profiles
+#   (.codex/config.example.toml), not here: those are interactive.
+# - Reasoning tokens count against max_output_tokens_per_task.
+# - Values must be supported by the profile's model (e.g. gpt-6.1-sol
+#   has no `none`/`minimal`). The Claude backend has no confirmed effort
+#   flag, so this applies to Codex workers only.
+[effort]
+worker_allowed = ["low", "medium"]   # lint rejects anything else
+
 [profiles.worker-16k]
 model = "CHANGE-ME-small-codex-model"
 claude_model = "CHANGE-ME-small-claude-model"
+reasoning_effort = "medium"       # default; a task may lower it to low
 max_turns = 40                   # claude backend: hard turn cap
 context_tokens = 16000
 reserved_system_and_tools = 3000 # Codex system prompt + tool schemas
@@ -37,6 +59,7 @@ harness_reruns = 1               # fresh-session reruns after failed gates
 [profiles.worker-32k]
 model = "CHANGE-ME-small-codex-model"
 claude_model = "CHANGE-ME-small-claude-model"
+reasoning_effort = "medium"       # default; a task may lower it to low
 max_turns = 40                   # claude backend: hard turn cap
 context_tokens = 32000
 reserved_system_and_tools = 4000
@@ -49,7 +72,8 @@ harness_reruns = 1               # fresh-session reruns after failed gates
 
 [profiles.worker-128k]
 model = "CHANGE-ME-mid-codex-model"
-claude_model = "CHANGE-ME-small-claude-model"
+claude_model = "CHANGE-ME-mid-claude-model"
+reasoning_effort = "medium"       # default; a task may lower it to low
 max_turns = 40                   # claude backend: hard turn cap
 context_tokens = 128000
 reserved_system_and_tools = 6000

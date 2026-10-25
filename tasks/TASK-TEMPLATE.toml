@@ -12,6 +12,8 @@ package = "example_pkg" # key in specs/boundaries.toml; its AGENTS.md is embedde
 depends_on = []         # must be MERGED first. Required when scopes overlap
 feature_hash = "UNSET"  # pinned by: lint_contracts.py --pin TASK-NNNN
 supersedes = ""         # task this one replaces (that one is set retired)
+# reasoning_effort = "low"  # optional: lower the profile default for
+#                           # mechanical work; never above medium
 
 goal = """One paragraph: the observable outcome. No implementation hints
 unless an approach is required."""

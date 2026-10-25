@@ -115,8 +115,9 @@ enforced, until then they rely on review.
   `.agents/skills` with `agents/openai.yaml`; the `codex exec` flags
   `--output-schema`, `--json`, `-o`, `--sandbox`, `--cd` and
   `--ignore-user-config`. **Still to confirm:** prompt via stdin (`-`),
-  the usage field names in `--json` events, and strict-mode schema
-  enforcement.
+  the usage field names in `--json` events, strict-mode schema
+  enforcement, and that `model_reasoning_effort` accepts `xhigh` (the
+  API supports it; check that the Codex config does too).
 - **Claude Code, checked against the docs:** `CLAUDE.md` `@` imports,
   `.claude/skills` with `disable-model-invocation`, and the `claude -p`
   flags `--model`, `--output-format json`, `--json-schema`,

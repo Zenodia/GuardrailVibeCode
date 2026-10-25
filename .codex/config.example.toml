@@ -15,17 +15,19 @@ project_doc_max_bytes = 32768
 
 [profiles.architect]
 model = "CHANGE-ME-frontier-model"
-model_reasoning_effort = "high"
+model_reasoning_effort = "xhigh"   # design, bootstrap, BLOCKED rulings
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 
 [profiles.reviewer]
 model = "CHANGE-ME-different-family-or-size"
+model_reasoning_effort = "high"    # verification needs judgment, not design
 approval_policy = "on-request"
 sandbox_mode = "read-only"          # reviewers re-run checks, never edit
 
 [profiles.worker-interactive]
 # For a human pairing with the small model. Mirrors budgets.toml.
 model = "CHANGE-ME-small-codex-model"
+model_reasoning_effort = "medium"  # same cap as budgets.toml workers
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"

@@ -142,6 +142,22 @@ grep -rn "CHANGE-ME\|FILL" --exclude-dir=.git .
 placeholders. Hits inside `tools/governance/` and the READMEs are the
 detection code and documentation, not placeholders.
 
+## Reasoning effort
+
+| Who | Effort | Set in |
+| --- | --- | --- |
+| Architect (design, bootstrap, BLOCKED rulings) | `xhigh` | `profiles.architect` in your Codex config |
+| Reviewer | `high` | `profiles.reviewer` |
+| Worker (default) | `medium` | `reasoning_effort` per profile in `budgets.toml` |
+| Worker (mechanical task) | `low` | `reasoning_effort = "low"` in that task file |
+
+Workers never go above `medium`; `lint_contracts.py` rejects anything
+outside `[effort].worker_allowed`. A worker that fails does not think
+harder. It reports BLOCKED, and the debugging happens in the architect
+session at `xhigh`. Keep `max` for rare, deliberate calls. Reasoning
+tokens count against each profile's token budget, and each value must
+be supported by the profile's model.
+
 ## Starting a Codex session
 
 Codex loads the kit automatically. Started inside the repo, it reads the
