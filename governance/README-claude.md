@@ -94,7 +94,13 @@ already uses the kit with Codex, skip to step 3.
      (otherwise pass `--backend claude` per run);
    - `[commands] claude_allowed_bash`: the shell commands a worker may
      run without asking (your test runner and read-only git).
-4. **Owner review, branch protection and readiness:** steps 5-7 of
+4. **Owners and models.** Replace every `CHANGE-ME` (CODEOWNERS
+   handles, package owners, `claude_model`) as described in
+   "Filling in the placeholders" in `README.md`. The table there covers
+   both tools. Claude Code has no profiles, so the architect and
+   reviewer models are just the `--model` you pass when starting
+   `claude`.
+5. **Owner review, branch protection and readiness:** steps 5-7 of
    `README.md`. They are identical for both tools.
 
 ## Starting a Claude Code session

@@ -58,7 +58,8 @@ Do this once per repository, on its own branch and PR.
    - run `git config core.hooksPath .githooks`.
 2. **Codex profiles.** Copy the `[profiles.*]` blocks from
    `.codex/config.example.toml` into `%USERPROFILE%\.codex\config.toml`
-   (`~/.codex/config.toml` on Linux/macOS) and set real model names.
+   (`~/.codex/config.toml` on Linux/macOS) and set real model names. See
+   "Filling in the placeholders" below for every `CHANGE-ME`.
 3. **Bootstrap.** This generates the repo-specific layer: purpose,
    package rules, boundaries, interfaces, domain requirement drafts and
    readiness tasks.
@@ -89,6 +90,57 @@ Do this once per repository, on its own branch and PR.
    use a merge queue). Allow `task/*` branch creation.
 7. **Readiness.** Run the RT-* tasks from the bootstrap
    (`governance/READINESS.md`) before giving the small model real work.
+
+## Filling in the placeholders
+
+The kit ships with two kinds of placeholders:
+
+- **`FILL`**: repo-specific content (purpose, package paths, test
+  command, domain invariants). The bootstrap skill fills these (step 3
+  above); edit by hand only what it gets wrong.
+- **`CHANGE-ME`**: **people and models**. Only you know these, so you
+  fill them by hand. The table below lists each one.
+
+In `CODEOWNERS` the suffix names the **role**, and you replace the whole
+placeholder with **who holds that role**.
+
+| File | Placeholder | Replace with | Example |
+| --- | --- | --- | --- |
+| `.github/CODEOWNERS` (from `ci/CODEOWNERS`) | `@CHANGE-ME-owner` | GitHub handle or team that approves the constitution, requirements, boundaries and interfaces | `@alice` or `@acme/tech-leads` |
+| | `@CHANGE-ME-architects` | Who writes features and tasks | `@alice` or `@acme/architects` |
+| | `@CHANGE-ME-maintainers` | Who maintains the kit (governance, CI, skills) | `@acme/platform` |
+| | `@CHANGE-ME` (one line per package) | Who owns that package's code | `@bob` |
+| `specs/boundaries.toml` | `owner = "CHANGE-ME"` (each package) | The same handle or team as that package's CODEOWNERS line | `owner = "@bob"` |
+| `governance/budgets.toml` | `model = "CHANGE-ME-..."` | The small **Codex** model ID for workers | the ID you pass to `codex -m` |
+| | `claude_model = "CHANGE-ME-..."` | The small **Claude** model ID for workers (only if you use `--backend claude`) | the ID you pass to `claude --model` |
+| `~/.codex/config.toml` (from `.codex/config.example.toml`) | `profiles.architect.model` | Your **strong** model for architect sessions | |
+| | `profiles.reviewer.model` | A **different** model from the one that wrote the code, so review doesn't share its blind spots | |
+| | `profiles.worker-interactive.model` | Same as `model` in `budgets.toml` | |
+
+Rules for the CODEOWNERS values:
+
+- **They must be real GitHub handles** (`@username` or `@org/team`) with
+  write access to the repository. GitHub silently ignores names it can't
+  resolve, so a typo means no owner at all.
+- **Prefer teams once there is more than one person.** People then join
+  or leave by changing team membership on GitHub, not this file. Teams
+  exist only for repositories owned by a GitHub organization; a repo
+  under a personal account can use usernames only.
+- **Working solo?** Put your own handle everywhere. GitHub won't let you
+  approve your own PR, so leave "require review from code owners" off
+  until a second person joins, or allow admin bypass. Otherwise every PR
+  is stuck.
+
+Model IDs are not people: use the exact ID your CLI accepts, and check it
+with a one-line prompt before a real run.
+
+To find what's still unfilled:
+```bash
+grep -rn "CHANGE-ME\|FILL" --exclude-dir=.git .
+```
+`lint_contracts.py` also prints a warning for each file that still has
+placeholders. Hits inside `tools/governance/` and the READMEs are the
+detection code and documentation, not placeholders.
 
 ## Starting a Codex session
 
