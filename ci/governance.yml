@@ -1,0 +1,83 @@
+# GitHub Actions template: copy to .github/workflows/governance.yml.
+# (For GitLab or Jenkins, keep the same job split and commands.)
+# Pin every action to a commit SHA when adopting; tags are shown here
+# for readability.
+#
+# This is the GUARDRAIL layer. Every check here runs whoever wrote the
+# change (human, small worker, or architect), because the scripts are the
+# only part of the contract a model cannot talk its way around.
+
+name: governance
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Lint contracts (requirements, AGENTS.md budget, tasks, trace)
+        # Add --strict-trace once every approved MUST/test requirement has
+        # a @pytest.mark.req test; until then untested ones are warnings.
+        run: python tools/governance/lint_contracts.py
+      - name: Import boundaries and declared dependencies
+        run: python tools/governance/check_boundaries.py
+      - name: Frozen public interfaces
+        run: python tools/governance/check_interfaces.py
+      - name: Task PRs - contract unchanged since claim, scope respected
+        # A task PR carries `Task:` and `Task-Hash:` trailers. If the
+        # task file, its pinned specs or its status changed on main since
+        # the claim, this fails: first merge wins, second re-validates
+        # (release the claim and re-run). Ad hoc PRs get the scope guard
+        # without a task.
+        if: github.event_name == 'pull_request'
+        run: |
+          base=$(git merge-base origin/${{ github.base_ref }} HEAD)
+          pairs=$(git log "$base"..HEAD --format='%(trailers:key=Task,valueonly,separator=)|%(trailers:key=Task-Hash,valueonly,separator=)' \
+                  | grep -E '^(TASK|RT)-[0-9]+\|' | sort -u)
+          if [ -z "$pairs" ]; then
+            python tools/governance/check_scope.py --base "$base"
+            exit 0
+          fi
+          if [ "$(echo "$pairs" | wc -l)" -ne 1 ]; then
+            echo "One PR = one task claimed once. Found: $pairs"; exit 1
+          fi
+          t=${pairs%%|*}; h=${pairs#*|}
+          python tools/governance/lint_contracts.py --task "$t" \
+            --task-hash "$h"
+          python tools/governance/check_scope.py --task "$t" --base "$base"
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-packages --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      # Solver-backed integration tests need the Docker image documented
+      # in docs/engineering/docker-environment.md. Run them in a separate
+      # job on that image; never mock the solver to make this job green.
+      - run: timeout 1800 uv run pytest -q -m "not solver"
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Secrets
+        uses: gitleaks/gitleaks-action@v2
+      - uses: astral-sh/setup-uv@v6
+      - name: SAST (shell=True, unsafe yaml/pickle, eval)
+        run: uvx bandit -r src packages -x '*/tests/*' -ll
+      - name: SCA (known-vulnerable locked deps)
+        run: |
+          uv export --frozen --no-hashes > /tmp/req.txt
+          uvx pip-audit -r /tmp/req.txt
+      - name: Lockfile in sync with manifests (REQ-DEV-002)
+        run: uv lock --check

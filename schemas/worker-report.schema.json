@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WorkerReport",
+  "description": "Final message of a worker run (codex exec --output-schema). Strict-mode compatible: all properties required, optional values nullable.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task_id", "status", "changed_files", "requirements_covered",
+               "tests_added", "validation", "attempts", "blocker",
+               "evidence_level", "limitations"],
+  "properties": {
+    "task_id": {"type": "string"},
+    "status": {"type": "string", "enum": ["DONE", "BLOCKED"]},
+    "changed_files": {"type": "array", "items": {"type": "string"}},
+    "requirements_covered": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["req_id", "test_node_ids"],
+        "properties": {
+          "req_id": {"type": "string", "pattern": "^REQ-[A-Z]+-[0-9]{3}$"},
+          "test_node_ids": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "tests_added": {"type": "array", "items": {"type": "string"}},
+    "validation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command", "ran", "exit_code", "summary"],
+        "properties": {
+          "command": {"type": "string"},
+          "ran": {"type": "boolean"},
+          "exit_code": {"type": ["integer", "null"]},
+          "summary": {"type": "string"}
+        }
+      }
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["failure_id", "class", "command", "error_excerpt",
+                     "hypothesis", "change", "result", "next"],
+        "properties": {
+          "failure_id": {"type": "string"},
+          "class": {"type": "string", "enum": ["CODE", "TEST", "ENVIRONMENT",
+                    "SPECIFICATION", "ARCHITECTURE", "TOOLING"]},
+          "command": {"type": "string"},
+          "error_excerpt": {"type": "string"},
+          "hypothesis": {"type": "string"},
+          "change": {"type": "string"},
+          "result": {"type": "string", "enum": ["pass", "fail", "new-error"]},
+          "next": {"type": "string"}
+        }
+      }
+    },
+    "blocker": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["class", "summary", "evidence", "needed", "conflicting_ids"],
+      "properties": {
+        "class": {"type": "string", "enum": ["CODE", "TEST", "ENVIRONMENT",
+                  "SPECIFICATION", "ARCHITECTURE", "TOOLING"]},
+        "summary": {"type": "string"},
+        "evidence": {"type": "string"},
+        "needed": {"type": "string"},
+        "conflicting_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "evidence_level": {
+      "type": "string",
+      "enum": ["software-tests-only", "reference-comparison", "physical-validation"],
+      "description": "REQ-SCI-001: what kind of evidence supports the result."
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

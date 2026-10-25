@@ -1,0 +1,64 @@
+# Context and execution budgets. Read by compile_packet.py, run_worker.py
+# and lint_contracts.py. All token figures use the tokenizer named below;
+# when it is unavailable, chars / chars_per_token_fallback is used, and
+# that fallback is deliberately pessimistic.
+#
+# These are planning targets for the harness to enforce. They are not
+# model facts. Re-measure with the Worker Readiness Test
+# (governance/READINESS.md) whenever the worker model changes.
+
+active_profile = "worker-32k"
+
+[tokenizer]
+name = "o200k_base"              # tiktoken encoding, if installed
+chars_per_token_fallback = 3.2   # pessimistic for markdown + code
+
+# Always-on layer: everything Codex auto-loads for a worker session.
+[always_on]
+root_agents_md_max_tokens = 650
+package_agents_md_max_tokens = 300
+chain_max_tokens = 1000          # root + deepest package file combined
+constitution_core_max_tokens = 800
+
+[profiles.worker-16k]
+model = "CHANGE-ME-small-codex-model"
+context_tokens = 16000
+reserved_system_and_tools = 3000 # Codex system prompt + tool schemas
+packet_max_fraction = 0.20       # packet <= 20% of usable context
+max_attempts_per_hypothesis = 2
+max_hypotheses = 3
+wall_clock_minutes = 20
+max_output_tokens_per_task = 60000
+harness_reruns = 1               # fresh-session reruns after failed gates
+
+[profiles.worker-32k]
+model = "CHANGE-ME-small-codex-model"
+context_tokens = 32000
+reserved_system_and_tools = 4000
+packet_max_fraction = 0.20
+max_attempts_per_hypothesis = 2
+max_hypotheses = 3
+wall_clock_minutes = 30
+max_output_tokens_per_task = 120000
+harness_reruns = 1               # fresh-session reruns after failed gates
+
+[profiles.worker-128k]
+model = "CHANGE-ME-mid-codex-model"
+context_tokens = 128000
+reserved_system_and_tools = 6000
+packet_max_fraction = 0.15       # long context degrades; stay lean
+max_attempts_per_hypothesis = 2
+max_hypotheses = 3
+wall_clock_minutes = 45
+max_output_tokens_per_task = 250000
+harness_reruns = 1               # fresh-session reruns after failed gates
+
+# Packet section caps (tokens). The compiler rejects, never truncates, a
+# packet whose mandatory sections exceed a cap. The task must be split.
+[packet_sections]
+core_rules = 800
+package_rules = 350
+task_contract = 1500
+requirements = 1500
+interfaces = 1500
+baseline_evidence = 600

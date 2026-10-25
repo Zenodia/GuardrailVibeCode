@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LedgerEntry",
+  "description": "One file in status/ledger/ per run, written by run_worker.py (never by the model). The handoff record between fresh-context tasks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ts", "task_id", "status", "profile", "model", "base_commit",
+               "result_commit", "branch", "packet_sha256", "req_ids",
+               "gates", "attempts", "usage", "blocker", "next"],
+  "properties": {
+    "ts": {"type": "string", "format": "date-time"},
+    "task_id": {"type": "string"},
+    "status": {"type": "string",
+               "enum": ["DONE", "BLOCKED", "REJECTED", "ERROR"]},
+    "profile": {"type": "string"},
+    "model": {"type": "string"},
+    "base_commit": {"type": "string", "description": "main at claim time"},
+    "result_commit": {"type": ["string", "null"]},
+    "branch": {"type": ["string", "null"]},
+    "packet_sha256": {"type": "string"},
+    "req_ids": {"type": "array", "items": {"type": "string"}},
+    "gates": {
+      "type": "object",
+      "additionalProperties": {"type": "string",
+        "enum": ["pass", "fail", "skipped", "not-run"]},
+      "description": "BASELINE, RED, GREEN, GUARD_SCOPE, GUARD_BOUNDARIES, GUARD_INTERFACES, REPORT"
+    },
+    "attempts": {"type": "integer", "minimum": 0},
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wall_seconds", "input_tokens", "output_tokens"],
+      "properties": {
+        "wall_seconds": {"type": "number"},
+        "input_tokens": {"type": ["integer", "null"]},
+        "output_tokens": {"type": ["integer", "null"]}
+      }
+    },
+    "blocker": {"type": ["object", "null"]},
+    "next": {"type": ["string", "null"],
+             "description": "Next dependent task ID or the unresolved blocker summary."}
+  }
+}

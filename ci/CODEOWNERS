@@ -1,0 +1,30 @@
+# Copy to .github/CODEOWNERS. Replace @CHANGE-ME with real owners.
+# This enforces governance/CHANGE_CONTROL.md section 3: the contract is
+# changed by people, and the scripts only enforce it.
+
+/AGENTS.md                      @CHANGE-ME-maintainers
+**/AGENTS.md                    @CHANGE-ME-maintainers
+/governance/                    @CHANGE-ME-maintainers
+/governance/CONSTITUTION.md     @CHANGE-ME-owner
+/specs/                         @CHANGE-ME-architects
+/specs/boundaries.toml          @CHANGE-ME-owner
+/specs/interfaces.toml          @CHANGE-ME-owner
+/tasks/                         @CHANGE-ME-architects
+/tools/governance/              @CHANGE-ME-maintainers
+/ci/                            @CHANGE-ME-maintainers
+/.agents/                       @CHANGE-ME-maintainers
+
+# Reference data and canonical configs (CON-10, REQ-CFG-005)
+/packages/twi/src/twi/data/     @CHANGE-ME-owner
+/tests/integration/             @CHANGE-ME-owner
+
+# Package owners (also in specs/boundaries.toml `owner`)
+/src/ebe/                       @CHANGE-ME
+/packages/geoforge/             @CHANGE-ME
+/packages/physforge/            @CHANGE-ME
+/packages/elmerforge/           @CHANGE-ME
+/packages/dataforge/            @CHANGE-ME
+/packages/beamforge/            @CHANGE-ME
+/packages/twi/                  @CHANGE-ME
+/packages/lorentzforge/         @CHANGE-ME
+/packages/beamdiag/             @CHANGE-ME

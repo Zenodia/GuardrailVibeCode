@@ -1,0 +1,59 @@
+[[requirement]]
+id = "REQ-CFG-001"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-03"]
+text = """Configuration files are the authoritative source of simulation
+inputs, physical parameters and execution settings. A package must not
+keep an independent copy of a parameter that a canonical config defines."""
+verify = "review"
+source = "AGENTS.md#Canonical Configuration"
+
+[[requirement]]
+id = "REQ-CFG-002"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-03", "CON-04"]
+text = """Runtime overrides (CLI flags, environment variables) of
+configuration values must be explicit and must be recorded in the
+resolved configuration output of the run."""
+verify = "test"
+source = "AGENTS.md#Canonical Configuration"
+
+[[requirement]]
+id = "REQ-CFG-003"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-03"]
+text = """New or changed configuration schemas must be explicit and
+validated at load time. A loader must reject a missing or malformed
+required section with an error naming the file and the key."""
+verify = "test"
+source = "AGENTS.md#Canonical Configuration"
+
+[[requirement]]
+id = "REQ-CFG-004"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-01", "CON-03"]
+text = """Default values that affect physical output (energies, positions,
+currents, tolerances, grid sizes, time steps) must not change unless the
+task explicitly authorizes the new value and cites this requirement."""
+verify = "review"
+source = "AGENTS.md#Safety and Validation (canonical configurations)"
+
+[[requirement]]
+id = "REQ-CFG-005"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-03", "CON-10"]
+text = """Canonical configuration files under tests/integration/*/configs/
+and package examples/ must not be modified without explicit
+authorization in the task."""
+verify = "script:check_scope"
+source = "AGENTS.md#Safety and Validation"

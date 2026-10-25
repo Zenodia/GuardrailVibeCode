@@ -1,0 +1,47 @@
+[[requirement]]
+id = "REQ-PROV-001"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-04"]
+text = """Each simulation run must persist the effective configuration it
+used, and every result artifact must be traceable to that configuration,
+the code revision, and the numerical/solver settings."""
+verify = "test"
+source = "AGENTS.md#Canonical Configuration; #Scientific Data and Results"
+
+[[requirement]]
+id = "REQ-PROV-002"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-04", "CON-05"]
+text = """Imported TWI data must keep its provenance (source ray file name
+and hash, seed), units, coordinate system and physical meaning through
+every conversion."""
+verify = "test"
+source = "AGENTS.md#Architecture (TWI provenance)"
+
+[[requirement]]
+id = "REQ-PROV-003"
+version = 1
+status = "draft"
+level = "MUST"
+principle = ["CON-04"]
+text = """When an external executable (gmsh, ElmerGrid, mpirun,
+ElmerSolver_mpi) is resolved from an environment-variable override, the
+resolved path and version must be recorded in the run provenance."""
+verify = "test"
+source = "docs/architecture/architecture-findings.md (env-var executable overrides)"
+
+[[requirement]]
+id = "REQ-PROV-004"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-04"]
+text = """Stochastic generation (particle sources, sampling) must accept an
+explicit seed, and the seed actually used, or the fact that none was
+given, must be recorded in the output artifact."""
+verify = "test"
+source = "AGENTS.md#Architecture (reproducible initial conditions)"

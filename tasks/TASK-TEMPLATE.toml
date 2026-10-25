@@ -1,0 +1,71 @@
+# Task contract. Written by the ARCHITECT, compiled into a worker packet by
+# tools/governance/compile_packet.py. Every field is read by a script;
+# free text belongs only in `title`, `goal`, `criteria` and `notes`.
+
+id = "TASK-NNNN"
+title = "<imperative, <= 70 chars>"
+feature = "FEAT-NNNN"
+kind = "fix"            # fix | feature | refactor | test
+status = "draft"        # draft | ready | retired (claimed/done come from git)
+profile = "worker-32k"  # key in governance/budgets.toml [profiles]
+package = "physforge"   # its AGENTS.md is embedded in the packet
+depends_on = []         # must be MERGED first. Required when scopes overlap
+feature_hash = "UNSET"  # pinned by: lint_contracts.py --pin TASK-NNNN
+supersedes = ""         # task this one replaces (that one is set retired)
+
+goal = """One paragraph: the observable outcome. No implementation hints
+unless an approach is required."""
+
+# Cited requirements -> content hash. `--pin` fills these. If a spec
+# changes, lint fails until the task is re-pinned or retired, and an
+# in-flight claim fails CI (CHANGE_CONTROL.md, rule 3).
+[requirements]
+"REQ-XXX-NNN" = "UNSET"
+
+[scope]
+allowed = ["packages/<pkg>/src/<pkg>/<module>.py",
+           "packages/<pkg>/tests/test_<module>.py"]
+forbidden = []                 # extra denials on top of boundaries.protected
+may_edit_existing_tests = false  # true only for kind="test"/"refactor"
+allow_new_dependencies = []      # import names, e.g. ["jsonschema"]
+allow_interface_change = []      # qualnames from specs/interfaces.toml
+allow_new_import_edges = []      # e.g. ["lorentzforge->dataforge"] (needs ADR)
+max_files_changed = 4
+max_lines_changed = 300
+
+[acceptance]
+# The RED gate runs these against the claim base and expects them to FAIL
+# (except kind="refactor"). The GREEN gate expects them to PASS.
+tests = ["packages/<pkg>/tests/test_<module>.py::test_<behaviour>"]
+criteria = ["<observable, measurable statement with units/tolerance>"]
+
+[validate]
+# Run by the worker AND independently by the harness. Deterministic,
+# bounded, no network.
+commands = [
+  "uv run pytest packages/<pkg>/tests -q",
+  "uv run ruff check packages/<pkg>",
+]
+timeout_seconds = 600
+
+[context]
+# What the worker may read. Excerpts are compiled into the packet by
+# symbol or line range. Prefer symbols: line numbers drift.
+excerpts = [
+  { path = "packages/<pkg>/src/<pkg>/<module>.py", symbol = "<function>" },
+  { path = "packages/<pkg>/tests/test_<module>.py", lines = "1-40" },
+]
+read_on_demand = ["packages/<pkg>/README.md"]
+notes = """Facts the worker needs that are not obvious from the excerpts.
+Keep them short and verifiable."""
+
+[escalate]
+# Conditions under which the worker must stop and report BLOCKED even
+# within the retry budget. Be specific; these catch spec conflicts.
+when = [
+  "The fix requires changing a file outside scope.allowed",
+  "An acceptance test cannot fail on the base code for the stated reason",
+]
+
+[commit]
+allowed = false        # harness commits on DONE with trailers; worker never

@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+# Local guardrail, for humans and agents alike. Enable once per clone:
+#   git config core.hooksPath .githooks
+# CI re-runs everything here; this hook only makes failures cheap.
+# Bypassing it (--no-verify) is a forbidden recovery behaviour for
+# agents (RECOVERY.md R5) and is caught by CI regardless.
+set -e
+
+PY=${PYTHON:-python3}
+
+# Staged-diff guards: protected reference data, test deletion,
+# skip/xfail/noqa additions, loosened tolerances.
+$PY tools/governance/check_scope.py --staged
+
+$PY tools/governance/check_boundaries.py >/dev/null || {
+  $PY tools/governance/check_boundaries.py
+  exit 1
+}
+
+# Contract lint only when contract files are staged (keeps commits fast).
+if git diff --cached --name-only | grep -Eq \
+   '^(AGENTS\.md|.*/AGENTS\.md|governance/|specs/|tasks/)'; then
+  $PY tools/governance/lint_contracts.py
+fi
+
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --no-banner
+fi

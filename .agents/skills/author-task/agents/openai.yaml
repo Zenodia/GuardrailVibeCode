@@ -1,0 +1,8 @@
+# Workers must never pick this skill on their own: authoring tasks is an
+# ARCHITECT action, and a worker rewriting its own contract is exactly
+# the failure this governance exists to prevent.
+interface:
+  display_name: "Author task contract (ARCHITECT)"
+  short_description: "Turn an approved feature into budgeted task contracts"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,109 @@
+# Frozen public interfaces (REQ-IFACE-001). check_interfaces.py hashes
+# each symbol's signature (parameter names, kinds, defaults, annotations
+# as source text) and fails if it differs from `sig_sha256`.
+#
+# Bootstrap: `python tools/governance/check_interfaces.py --record`
+# fills sig_sha256 from the current tree. Run it once at adoption, review
+# the diff, and commit. After that, only an approved task may re-record
+# a specific symbol (`--record --only <qualname>`).
+#
+# Seeded with the cross-package APIs from
+# docs/architecture/api-signatures.md. Add the rest of the 59 priority
+# APIs as their owners confirm them stable.
+
+schema_version = 1
+
+[[api]]
+qualname = "ebe.workflows.beam_through_field.run_beam_through_field"
+file = "src/ebe/workflows/beam_through_field.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "ebe.workflows.source_validation.validate_openpmd_source"
+file = "src/ebe/workflows/source_validation.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "ebe.bfield.pipeline.run_pipeline"
+file = "src/ebe/bfield/pipeline.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "ebe.bfield.backends.backend_for_strategy"
+file = "src/ebe/bfield/backends/__init__.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "beamforge.source.generate_source"
+file = "packages/beamforge/src/beamforge/source.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "beamforge.source.write_openpmd_source"
+file = "packages/beamforge/src/beamforge/source.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "dataforge.bfield.vtu_to_openpmd.convert_vtu_to_openpmd"
+file = "packages/dataforge/src/dataforge/bfield/vtu_to_openpmd.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "dataforge.bfield.vti_to_openpmd.convert_vti_to_openpmd"
+file = "packages/dataforge/src/dataforge/bfield/vti_to_openpmd.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "lorentzforge.propagation.field_maps.load_field_map"
+file = "packages/lorentzforge/src/lorentzforge/propagation/field_maps.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "lorentzforge.propagation.beam_tracer.initial_states_from_openpmd"
+file = "packages/lorentzforge/src/lorentzforge/propagation/beam_tracer.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "lorentzforge.propagation.openpmd_output.write_openpmd_particle_tracks"
+file = "packages/lorentzforge/src/lorentzforge/propagation/openpmd_output.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "lorentzforge.propagation.geometry.load_stl_geometry"
+file = "packages/lorentzforge/src/lorentzforge/propagation/geometry.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "beamdiag.diagnosis.beam_analysis.read_particle_h5_plane"
+file = "packages/beamdiag/src/beamdiag/diagnosis/beam_analysis.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "beamdiag.diagnosis.beam_analysis.compute_beam_metrics"
+file = "packages/beamdiag/src/beamdiag/diagnosis/beam_analysis.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "physforge.physics.assign_materials.assign_materials"
+file = "packages/physforge/src/physforge/physics/assign_materials.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "elmerforge.solvers.assign_solvers.assign_solvers"
+file = "packages/elmerforge/src/elmerforge/solvers/assign_solvers.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "geoforge.cli.generate_geometry.load_geometry_config"
+file = "packages/geoforge/src/geoforge/cli/generate_geometry.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "geoforge.cli.generate_geometry.build_mesh_manifest"
+file = "packages/geoforge/src/geoforge/cli/generate_geometry.py"
+sig_sha256 = "UNSET"
+
+[[api]]
+qualname = "twi.source.generate_openpmd_particles"
+file = "packages/twi/src/twi/source.py"
+sig_sha256 = "UNSET"

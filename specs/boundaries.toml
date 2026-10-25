@@ -1,0 +1,195 @@
+# Dependency law. Read by check_boundaries.py, compile_packet.py and
+# lint_contracts.py. Derived from docs/architecture/package-dependencies.md
+# and the manifests, as audited at commit a2dc9410 (2026-10-23).
+#
+# allowed_imports lists the workspace packages whose Python modules this
+# package may import. The list is the *observed* graph frozen as law:
+# adding an edge needs an ADR and an approved task (REQ-ARCH-001).
+#
+# third_party lists top-level *import names* (not distribution names)
+# matching [project].dependencies (+ extras where noted). Stdlib is always
+# allowed. An import that is in neither list fails check_boundaries
+# (REQ-DEV-002).
+
+schema_version = 1
+forbidden_import_roots = ["explore"]   # REQ-ARCH-005
+
+[packages.ebe]
+path = "src/ebe"
+owner = "CHANGE-ME"
+allowed_imports = ["geoforge", "physforge", "dataforge", "beamforge",
+                   "lorentzforge", "beamdiag"]
+cli_only = ["elmerforge"]   # invoked as subprocess, never imported
+third_party = ["numba", "ruamel", "streamlit_sortables", "gmsh", "plotly",
+               "streamlit", "numpy", "h5py", "yaml"]
+# numpy/h5py/yaml reach ebe transitively. Declare them explicitly in
+# pyproject.toml when adopting this file (REQ-DEV-002). INFERRED: ebe
+# source imports them; verify with check_boundaries --report.
+
+[packages.geoforge]
+path = "packages/geoforge/src/geoforge"
+owner = "CHANGE-ME"
+allowed_imports = []
+third_party = ["gmsh", "jsonschema", "ruamel", "plotly", "streamlit"]
+
+[packages.physforge]
+path = "packages/physforge/src/physforge"
+owner = "CHANGE-ME"
+allowed_imports = []
+third_party = ["ruamel"]
+
+[packages.elmerforge]
+path = "packages/elmerforge/src/elmerforge"
+owner = "CHANGE-ME"
+allowed_imports = []        # declared deps on geoforge/physforge are file
+                            # coupling only (REQ-ARCH-002)
+third_party = ["ruamel"]
+
+[packages.dataforge]
+path = "packages/dataforge/src/dataforge"
+owner = "CHANGE-ME"
+allowed_imports = []
+third_party = ["h5py", "matplotlib", "numpy", "pyvista", "ruamel", "scipy"]
+
+[packages.beamforge]
+path = "packages/beamforge/src/beamforge"
+owner = "CHANGE-ME"
+allowed_imports = []
+third_party = ["h5py", "numpy", "yaml"]
+
+[packages.twi]
+path = "packages/twi/src/twi"
+owner = "CHANGE-ME"
+allowed_imports = []
+importable_by = []          # nobody imports twi; file interface only
+third_party = ["h5py", "matplotlib", "numpy", "pandas", "scipy"]
+
+[packages.lorentzforge]
+path = "packages/lorentzforge/src/lorentzforge"
+owner = "CHANGE-ME"
+allowed_imports = ["beamforge"]
+third_party = ["h5py", "yaml", "numpy", "numba"]   # numba: accel extra
+
+[packages.beamdiag]
+path = "packages/beamdiag/src/beamdiag"
+owner = "CHANGE-ME"
+allowed_imports = ["lorentzforge"]
+third_party = ["h5py", "matplotlib", "numpy", "plotly", "yaml", "scipy",
+               "streamlit"]
+
+# ---------------------------------------------------------------------
+# Artifact contracts (REQ-ARCH-002, REQ-DATA-002, REQ-DATA-005).
+# `keys` are the names a consumer depends on. Renaming any of them is an
+# interface change that must update every consumer in the same task.
+# `status`: frozen = binding now; observed = current behaviour, schema
+# not yet versioned (see draft REQ-DATA-006).
+
+[[artifact]]
+id = "ART-MANIFEST"
+name = "mesh_manifest.yaml (physical-group manifest)"
+producer = "geoforge"
+mutators = ["physforge", "elmerforge"]
+consumers = ["physforge", "elmerforge", "ebe"]
+format = "YAML"
+keys = ["schema_version", "units", "sources", "physical_groups",
+        "bonded_contacts", "physical_groups[].name",
+        "physical_groups[].dimension", "physical_groups[].kind",
+        "physical_groups[].geometry_context"]
+status = "observed"
+evidence = "packages/geoforge/src/geoforge/cli/generate_geometry.py:2220"
+
+[[artifact]]
+id = "ART-SIF"
+name = "case.sif"
+producer = "elmerforge"
+consumers = ["ebe"]
+format = "Elmer SIF text"
+keys = []
+status = "observed"
+evidence = "packages/elmerforge/src/elmerforge/generators/generate_sif.py:678"
+
+[[artifact]]
+id = "ART-FIELD-OPENPMD"
+name = "*.openpmd.h5 (B field mesh)"
+producer = "dataforge"
+consumers = ["lorentzforge", "ebe"]
+format = "openPMD HDF5"
+# mesh B with x/y/z is VERIFIED. The grid attribute names are the
+# openPMD-standard ones and are INFERRED: confirm against
+# vti_to_openpmd.py:255 before freezing.
+keys = ["mesh:B", "B/x", "B/y", "B/z", "gridSpacing", "gridGlobalOffset",
+        "unitSI"]
+units = "tesla, metre"
+status = "frozen"
+evidence = "packages/dataforge/src/dataforge/bfield/vti_to_openpmd.py:255; packages/lorentzforge/src/lorentzforge/propagation/field_maps.py:94"
+
+[[artifact]]
+id = "ART-FIELD-NPZ"
+name = "*.field_cache.npz"
+producer = "dataforge"
+consumers = ["lorentzforge"]
+format = "NumPy NPZ"
+keys = ["bx_t", "by_t", "bz_t", "origin_m", "spacing_m"]
+units = "tesla, metre"
+status = "frozen"
+evidence = "packages/dataforge/src/dataforge/bfield/vti_to_openpmd.py:235; packages/lorentzforge/src/lorentzforge/propagation/field_maps.py:132"
+
+[[artifact]]
+id = "ART-SOURCE"
+name = "electron_source.openpmd.h5"
+producer = "beamforge"
+alt_producers = ["twi"]
+consumers = ["lorentzforge", "ebe"]
+format = "openPMD 1.1 HDF5, one iteration"
+keys = ["/data/0/particles/<species>", "id", "position", "momentum",
+        "positionOffset", "charge", "mass", "weighting"]
+units = "SI"
+status = "frozen"
+evidence = "packages/beamforge/src/beamforge/source.py:205; packages/twi/src/twi/source.py:172; packages/lorentzforge/src/lorentzforge/propagation/beam_tracer.py:294"
+
+[[artifact]]
+id = "ART-TRACKS"
+name = "electron_tracks.h5"
+producer = "lorentzforge"
+mutators = ["beamdiag"]
+consumers = ["beamdiag", "ebe"]
+format = "openPMD HDF5, many iterations"
+keys = ["/data/<step>/particles/beam", "/data/<step>/particles/beam_hits",
+        "/config/resolved_json", "/focus/row_json", "/metrics/rows_json",
+        "/spots/observation/rows_json"]
+status = "frozen"
+evidence = "packages/lorentzforge/src/lorentzforge/propagation/openpmd_output.py:25; packages/beamdiag/src/beamdiag/diagnosis/beam_analysis.py:1179"
+
+[[artifact]]
+id = "ART-SUMMARY"
+name = "summary.yaml"
+producer = "ebe"
+consumers = ["ebe.optimization", "reporting"]
+format = "YAML"
+keys = ["outputs", "beam_metrics", "resolved_config", "bfield", "timings"]
+status = "frozen"
+evidence = "src/ebe/workflows/beam_through_field.py:266"
+
+[[artifact]]
+id = "ART-OPTIMIZER-RESULTS"
+name = "optimizer result.yaml / best.yaml / checkpoints"
+producer = "ebe"
+consumers = ["ebe.optimization.reporting"]
+format = "YAML/CSV, per optimizer"
+keys = []
+status = "observed"   # no common schema (architecture-findings.md)
+evidence = "src/ebe/optimization/dipole.py:752; focus.py:823; cyclic_beam.py:3093"
+
+# ---------------------------------------------------------------------
+# Protected paths: check_scope.py rejects any worker diff touching these,
+# whatever the task scope says. Humans change them via CHANGE_CONTROL.md.
+[protected]
+always = ["AGENTS.md", "**/AGENTS.md", "**/AGENTS.override.md",
+          "governance/**", "specs/**", "tasks/**", ".agents/**",
+          ".codex/**", "ci/**", ".githooks/**", "tools/governance/**",
+          "schemas/**", "status/**", "pyproject.toml",
+          "packages/*/pyproject.toml", "uv.lock"]
+reference_data = ["packages/twi/src/twi/data/**", "**/reference/**",
+                  "packages/geoforge/qualification/**"]
+canonical_config = ["tests/integration/*/configs/**",
+                    "packages/*/examples/**"]

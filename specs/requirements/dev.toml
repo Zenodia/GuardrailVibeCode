@@ -1,0 +1,45 @@
+[[requirement]]
+id = "REQ-DEV-001"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-08"]
+text = """New behaviour must have a unit test, and behaviour at a package
+boundary must have an integration test. Each test proving a requirement
+carries @pytest.mark.req("<REQ-ID>")."""
+verify = "script:lint_contracts"
+source = "AGENTS.md#Development"
+
+[[requirement]]
+id = "REQ-DEV-002"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-06"]
+text = """No new third-party dependency may be added without a task that
+authorizes it; added dependencies must be declared in the package's
+pyproject.toml and locked in uv.lock."""
+verify = "script:check_boundaries"
+source = "AGENTS.md#Development"
+
+[[requirement]]
+id = "REQ-DEV-003"
+version = 1
+status = "approved"
+level = "MUST"
+principle = ["CON-09"]
+text = """Changes must stay within the task scope; unrelated files must
+not be modified."""
+verify = "script:check_scope"
+source = "AGENTS.md#Development"
+
+[[requirement]]
+id = "REQ-DEV-004"
+version = 1
+status = "approved"
+level = "SHOULD"
+principle = ["CON-06"]
+text = """Code follows the repository Ruff configuration with an
+80-column limit where practical."""
+verify = "script:ruff"
+source = "AGENTS.md#Development"

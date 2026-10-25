@@ -1,0 +1,31 @@
+# Example Codex configuration for HUMANS and the ARCHITECT working
+# interactively. Copy the profiles into $CODEX_HOME/config.toml
+# (default ~/.codex/config.toml).
+#
+# Workers do NOT use this file: run_worker.py passes --ignore-user-config
+# and sets the model, sandbox and output schema explicitly, so a
+# developer's personal settings cannot change what a worker may do.
+#
+# Key names match the Codex config reference as of 2026-10. CONFIRM them
+# against your installed Codex version before relying on them.
+
+# Codex stops concatenating AGENTS.md files once this many bytes are
+# reached. Our chain is ~2-3 KiB; lint_contracts.py keeps it far below.
+project_doc_max_bytes = 32768
+
+[profiles.architect]
+model = "CHANGE-ME-frontier-model"
+model_reasoning_effort = "high"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[profiles.reviewer]
+model = "CHANGE-ME-different-family-or-size"
+approval_policy = "on-request"
+sandbox_mode = "read-only"          # reviewers re-run checks, never edit
+
+[profiles.worker-interactive]
+# For a human pairing with the small model. Mirrors budgets.toml.
+model = "CHANGE-ME-small-codex-model"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
